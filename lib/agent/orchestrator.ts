@@ -1,4 +1,3 @@
-import { Agent } from "@cursor/sdk";
 import type { EnrichedRejection, AnalysisResult, RejectionResult } from "../types.js";
 import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts.js";
 import { parseAgentResponse, buildRejectionResults, buildFallbackResults } from "./tools.js";
@@ -11,11 +10,16 @@ export async function runAnalysis(
 
   let rejections: RejectionResult[];
 
-  try {
-    rejections = await runCursorAgent(enrichedRejections);
-  } catch (err) {
-    console.warn("Cursor SDK agent unavailable, using deterministic fallback:", err);
+  if (!process.env.CURSOR_API_KEY) {
+    console.warn("CURSOR_API_KEY not set, using deterministic fallback");
     rejections = buildFallbackResults(enrichedRejections);
+  } else {
+    try {
+      rejections = await runCursorAgent(enrichedRejections);
+    } catch (err) {
+      console.warn("Cursor SDK agent failed, using deterministic fallback:", err);
+      rejections = buildFallbackResults(enrichedRejections);
+    }
   }
 
   const summary = {
@@ -37,6 +41,7 @@ export async function runAnalysis(
 async function runCursorAgent(
   enrichedRejections: EnrichedRejection[]
 ): Promise<RejectionResult[]> {
+  const { Agent } = await import("@cursor/sdk");
   const prompt = `${SYSTEM_PROMPT}\n\n${buildUserPrompt(enrichedRejections)}`;
 
   const result = await Agent.prompt(prompt, {
