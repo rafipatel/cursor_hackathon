@@ -257,7 +257,7 @@ export default function DocumentAnalyzer() {
               type="file"
               onChange={handleFileSelect}
               className="hidden"
-              accept=".xml"
+              accept=".xml,.csv"
             />
             <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${isDragOver ? "bg-brand-blue" : "bg-brand-blue-50"} transition-colors`}>
               <Upload className={`w-7 h-7 ${isDragOver ? "text-white" : "text-brand-blue"} transition-colors`} />
@@ -266,7 +266,7 @@ export default function DocumentAnalyzer() {
               {isDragOver ? "Drop XML to analyze" : "Upload FCA Regulatory Feedback"}
             </div>
             <div className="text-sm text-text-muted mb-4">
-              Drag & drop your FCA rejection XML file or click to browse
+              Drag & drop your FCA rejection file or click to browse
             </div>
             <div className="inline-flex items-center gap-1.5 text-[11px] text-text-muted bg-surface-muted px-3 py-1.5 rounded-full font-medium">
               FCA MiFIR Rejection Feedback XML
