@@ -1,5 +1,5 @@
-client_reference,client_name,rm_name,rm_email,rm_phone,client_tier,region
-CLIENT-GS-042,Goldman Sachs Fund 042,Anita Cole,anita.cole@lseg.com,+44 20 7930 4001,Tier 1,EMEA
-CLIENT-BR-017,BlackRock Fund 017,David Lin,david.lin@lseg.com,+44 20 7930 4002,Tier 1,Americas
-CLIENT-CIT-001,Citadel Securities,Sarah Park,sarah.park@lseg.com,+44 20 7930 4003,Tier 1,Americas
-CLIENT-DB-001,Deutsche Bank AG,Marcus Weber,marcus.weber@lseg.com,+49 69 910 0001,Tier 1,EMEA
+client_reference,client_account_id,rm_name,rm_email,rm_region,rm_timezone
+GOLDMANSAX-FUND-042,CA-GLD-001,Anita Cole,anita.cole@lseg.example,EMEA,Europe/London
+BLACKROCK-FUND-017,CA-BLK-017,David Lin,david.lin@lseg.example,EMEA,Europe/London
+NATWEST-FUND-318,CA-NAT-318,Peter Shah,peter.shah@lseg.example,EMEA,Europe/London
+HSBC-FUND-502,CA-HSB-502,Leah Wong,leah.wong@lseg.example,APAC,Asia/Singapore

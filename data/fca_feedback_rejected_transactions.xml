@@ -1,36 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<FCAFeedback>
+<RegulatoryFeedback>
   <Header>
-    <MessageType>REJECTION_FEEDBACK</MessageType>
-    <SendingEntity>FCA</SendingEntity>
-    <ReceivingEntity>LSEG_FXALL</ReceivingEntity>
-    <CreationTimestamp>2026-04-07T08:30:00Z</CreationTimestamp>
-    <MessageId>FCA-FB-2026-04-07-001</MessageId>
+    <FeedbackID>FCA-FB-20260407-001</FeedbackID>
+    <ReportingDate>2026-04-07</ReportingDate>
+    <SubmittingFirm>LSEG-FXALL</SubmittingFirm>
+    <GeneratedAt>2026-04-07T08:30:00Z</GeneratedAt>
   </Header>
   <RejectedTransactions>
     <Transaction>
-      <ReferenceNumber>FXALL-20260407-001</ReferenceNumber>
-      <RejectionCode>LEIV001</RejectionCode>
-      <RejectionDescription>Invalid LEI - Entity identifier has lapsed and is no longer valid for reporting purposes</RejectionDescription>
-      <RejectedField>BuyerIdentificationCode</RejectedField>
-      <RejectedValue>213800FERQ5LE3H0XU88</RejectedValue>
-      <FeedbackTimestamp>2026-04-07T08:30:00Z</FeedbackTimestamp>
+      <ReferenceNumber>TRN-2026-00123456</ReferenceNumber>
+      <RejectCode>LEIV001</RejectCode>
+      <RejectReason>Invalid LEI - status is LAPSED</RejectReason>
+      <Field>BuyerIdentificationCode</Field>
+      <SubmittedValue>213800FERQ5LE3H0XU88</SubmittedValue>
+      <ClientReference>GOLDMANSAX-FUND-042</ClientReference>
     </Transaction>
     <Transaction>
-      <ReferenceNumber>FXALL-20260407-002</ReferenceNumber>
-      <RejectionCode>LEIV001</RejectionCode>
-      <RejectionDescription>Invalid LEI - Entity identifier has lapsed and is no longer valid for reporting purposes</RejectionDescription>
-      <RejectedField>BuyerIdentificationCode</RejectedField>
-      <RejectedValue>213800FERQ5LE3H0XU88</RejectedValue>
-      <FeedbackTimestamp>2026-04-07T08:30:01Z</FeedbackTimestamp>
+      <ReferenceNumber>TRN-2026-00123457</ReferenceNumber>
+      <RejectCode>LEIV001</RejectCode>
+      <RejectReason>Invalid LEI - status is LAPSED</RejectReason>
+      <Field>BuyerIdentificationCode</Field>
+      <SubmittedValue>213800FERQ5LE3H0XU88</SubmittedValue>
+      <ClientReference>GOLDMANSAX-FUND-042</ClientReference>
     </Transaction>
     <Transaction>
-      <ReferenceNumber>FXALL-20260407-003</ReferenceNumber>
-      <RejectionCode>LEIV002</RejectionCode>
-      <RejectionDescription>Invalid LEI - Entity identifier has been annulled and retired from the GLEIF database</RejectionDescription>
-      <RejectedField>BuyerIdentificationCode</RejectedField>
-      <RejectedValue>5299000J2N45DDNE4Y28</RejectedValue>
-      <FeedbackTimestamp>2026-04-07T08:30:02Z</FeedbackTimestamp>
+      <ReferenceNumber>TRN-2026-00123891</ReferenceNumber>
+      <RejectCode>LEIV002</RejectCode>
+      <RejectReason>Invalid LEI - status is ANNULLED</RejectReason>
+      <Field>BuyerIdentificationCode</Field>
+      <SubmittedValue>5299000J2N45DDNE4Y28</SubmittedValue>
+      <ClientReference>BLACKROCK-FUND-017</ClientReference>
     </Transaction>
   </RejectedTransactions>
-</FCAFeedback>
+</RegulatoryFeedback>
