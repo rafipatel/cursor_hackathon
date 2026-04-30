@@ -1,556 +1,663 @@
-import { useState, useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Upload,
   FileText,
-  CheckCircle2,
   AlertTriangle,
   XCircle,
   Loader2,
+  Sparkles,
   X,
-  ChevronRight,
   Brain,
   Shield,
-  Clock,
-  FileWarning,
-  Sparkles,
-  ArrowRight,
+  ChevronRight,
+  Mail,
+  Copy,
+  Database,
+  PlayCircle,
+  Building2,
+  TrendingUp,
 } from "lucide-react";
 
-type DocStatus = "uploading" | "analyzing" | "pass" | "warning" | "fail";
+const BACKEND = "http://localhost:8787";
 
-interface Issue {
-  severity: "error" | "warning" | "info";
-  title: string;
-  detail: string;
-  location?: string;
-}
-
-interface AnalyzedDoc {
-  id: string;
-  name: string;
-  size: string;
-  type: string;
-  status: DocStatus;
-  score: number;
-  issues: Issue[];
-  summary: string;
-  analyzedAt?: string;
-}
-
-const mockIssues: Record<string, Issue[]> = {
-  error: [
-    { severity: "error", title: "Missing signature", detail: "Document requires authorized signatory on page 3. Signature field is empty.", location: "Page 3, Section 4.2" },
-    { severity: "error", title: "Expired date", detail: "The certification date has expired. Document was valid until 2024-12-31.", location: "Page 1, Header" },
-    { severity: "warning", title: "Inconsistent naming", detail: "Company name appears as both 'Acme Corp' and 'ACME Corporation' across sections.", location: "Pages 2, 5, 8" },
-  ],
-  warning: [
-    { severity: "warning", title: "Low resolution scan", detail: "Page 4 scan quality is below 150 DPI. May cause readability issues during audit.", location: "Page 4" },
-    { severity: "info", title: "Metadata missing", detail: "Document author and creation date are not embedded in file metadata." },
-  ],
-  clean: [
-    { severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." },
-  ],
-};
-
-const mockSummaries = [
-  "Financial statement with multiple compliance gaps detected. Missing authorized signature and expired certification require immediate attention.",
-  "Contract document in good standing. Minor scan quality issue on one page — recommend re-scanning for archive quality.",
-  "Fully compliant regulatory filing. All required fields present, signatures valid, dates current.",
-  "KYC verification document with inconsistent entity naming. Recommend standardizing before submission.",
-  "Insurance policy document — expired validity date detected. Renewal required before processing.",
-  "Tax return filing — all figures verified against source data. Clean compliance status.",
-  "Board resolution with missing signatory. Cannot proceed until all directors have signed.",
-  "Audit report — clean with minor metadata gaps. Acceptable for filing.",
+const DEMO_FILES = [
+  "submitted_mifir_reports.csv",
+  "fca_feedback_rejected_transactions.xml",
+  "reg_feedback_rejects.csv",
+  "gleif_lei_snapshot.csv",
+  "fxall_trade_registry.csv",
+  "relationship_management_database.csv",
 ];
 
-function generateMockAnalysis(file: File, index: number): AnalyzedDoc {
-  const rand = Math.random();
-  let status: DocStatus;
-  let issues: Issue[];
-  let score: number;
-
-  if (rand < 0.3) {
-    status = "fail";
-    issues = [...mockIssues.error];
-    score = Math.floor(Math.random() * 30) + 20;
-  } else if (rand < 0.55) {
-    status = "warning";
-    issues = [...mockIssues.warning];
-    score = Math.floor(Math.random() * 25) + 60;
-  } else {
-    status = "pass";
-    issues = [...mockIssues.clean];
-    score = Math.floor(Math.random() * 10) + 90;
-  }
-
-  const sizeKB = file.size / 1024;
-  const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${Math.round(sizeKB)} KB`;
-
-  return {
-    id: `doc-${Date.now()}-${index}`,
-    name: file.name,
-    size: sizeStr,
-    type: file.type || "application/octet-stream",
-    status,
-    score,
-    issues,
-    summary: mockSummaries[index % mockSummaries.length],
-    analyzedAt: new Date().toLocaleTimeString(),
-  };
+interface SpecterIntel {
+  organization_name?: string;
+  tagline?: string;
+  description?: string;
+  traction_highlights?: string;
+  business_models?: string[];
+  customer_focus?: string;
+  tags?: string[];
+  last_updated?: string;
+  matched_on?: "domain" | "name";
+  domain?: string;
 }
 
-const statusConfig: Record<DocStatus, { icon: React.ElementType; color: string; bg: string; border: string; label: string }> = {
-  uploading: { icon: Loader2, color: "text-brand-blue", bg: "bg-brand-blue-50", border: "border-brand-blue-100", label: "Uploading" },
-  analyzing: { icon: Loader2, color: "text-brand-blue", bg: "bg-brand-blue-50", border: "border-brand-blue-100", label: "Analyzing" },
-  pass: { icon: CheckCircle2, color: "text-status-pass", bg: "bg-status-pass-bg", border: "border-status-pass/20", label: "Passed" },
-  warning: { icon: AlertTriangle, color: "text-status-warn", bg: "bg-status-warn-bg", border: "border-status-warn/20", label: "Warnings" },
-  fail: { icon: XCircle, color: "text-status-fail", bg: "bg-status-fail-bg", border: "border-status-fail/20", label: "Issues Found" },
+interface SpecterImpact {
+  score: number;
+  band: "high" | "medium" | "low";
+  signal: string;
+  factors: string[];
+}
+
+interface Ticket {
+  reject_id: string;
+  trade_ref: string;
+  reject_code: string;
+  reject_reason: string;
+  field_name: string;
+  bad_lei: string;
+  lei_status: "LAPSED" | "ANNULLED" | "ACTIVE" | "unknown";
+  client: { reference: string; account_id: string; parent_firm: string };
+  fund: { id: string; name: string };
+  rm: { name: string; email: string; region: string } | null;
+  severity: "fail" | "warning" | "escalate";
+  confidence: number;
+  root_cause: string;
+  recommended_action: string;
+  rm_email_draft: { subject: string; body: string };
+  parent_firm_intel?: SpecterIntel;
+  parent_firm_canonical?: { name?: string; domain?: string; organization_id?: string };
+  specter_impact?: SpecterImpact;
+  specter_reranked?: boolean;
+  specter_escalated?: boolean;
+}
+
+interface TriageResponse {
+  tickets: Ticket[];
+  stats: {
+    total: number;
+    fail: number;
+    warning: number;
+    escalate: number;
+    enriched: number;
+    high_impact?: number;
+    reranked_by_specter?: number;
+    policy_escalations?: number;
+  };
+  durations: { agent_ms: number; specter_ms: number; total_ms: number };
+  enrichment?: { hit_rate: number; hits: number; requested: number; unavailable: boolean };
+  model: string;
+  generated_at: string;
+}
+
+interface FilePayload { filename: string; mimeType: string; text: string }
+type Phase = "idle" | "loading_files" | "running" | "done" | "error";
+
+const SEVERITY = {
+  fail: { color: "text-status-fail", bg: "bg-status-fail-bg", icon: XCircle, label: "Fail" },
+  warning: { color: "text-status-warn", bg: "bg-status-warn-bg", icon: AlertTriangle, label: "Warning" },
+  escalate: { color: "text-brand-blue", bg: "bg-brand-blue-50", icon: Brain, label: "Escalate" },
 };
 
-const severityConfig = {
-  error: { icon: XCircle, color: "text-status-fail", bg: "bg-status-fail-bg", border: "border-status-fail/20" },
-  warning: { icon: AlertTriangle, color: "text-status-warn", bg: "bg-status-warn-bg", border: "border-status-warn/20" },
-  info: { icon: CheckCircle2, color: "text-brand-blue", bg: "bg-brand-blue-50", border: "border-brand-blue-100" },
-};
+async function loadDemoData(): Promise<FilePayload[]> {
+  return Promise.all(
+    DEMO_FILES.map(async (filename) => {
+      const res = await fetch(`/demo-data/${filename}`);
+      const text = await res.text();
+      const mimeType = filename.endsWith(".xml") ? "application/xml" : filename.endsWith(".csv") ? "text/csv" : "text/plain";
+      return { filename, mimeType, text };
+    })
+  );
+}
+
+async function readFiles(fileList: FileList | File[]): Promise<FilePayload[]> {
+  return Promise.all(
+    Array.from(fileList).map(async (file) => ({
+      filename: file.name,
+      mimeType: file.type || "text/plain",
+      text: await file.text(),
+    }))
+  );
+}
+
+async function runTriage(files: FilePayload[]): Promise<TriageResponse> {
+  const res = await fetch(`${BACKEND}/triage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ files }),
+  });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    throw new Error(`Backend ${res.status}: ${errBody.slice(0, 200)}`);
+  }
+  return res.json();
+}
 
 export default function DocumentAnalyzer() {
-  const [documents, setDocuments] = useState<AnalyzedDoc[]>([]);
-  const [selectedDoc, setSelectedDoc] = useState<AnalyzedDoc | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [response, setResponse] = useState<TriageResponse | null>(null);
+  const [stagedCount, setStagedCount] = useState(0);
+  const [selected, setSelected] = useState<Ticket | null>(null);
+  const [filter, setFilter] = useState<"all" | "fail" | "warning" | "escalate" | "high_impact" | "reranked">("all");
+  const [emailCopied, setEmailCopied] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processFiles = useCallback((files: FileList | File[]) => {
-    const fileArray = Array.from(files);
-
-    const newDocs: AnalyzedDoc[] = fileArray.map((file, i) => ({
-      id: `doc-${Date.now()}-${i}`,
-      name: file.name,
-      size: `${Math.round(file.size / 1024)} KB`,
-      type: file.type || "application/octet-stream",
-      status: "analyzing" as DocStatus,
-      score: 0,
-      issues: [],
-      summary: "",
-    }));
-
-    setDocuments((prev) => [...newDocs, ...prev]);
-
-    fileArray.forEach((file, i) => {
-      const delay = 1500 + Math.random() * 2500;
-      setTimeout(() => {
-        const analyzed = generateMockAnalysis(file, i);
-        analyzed.id = newDocs[i].id;
-        setDocuments((prev) =>
-          prev.map((d) => (d.id === newDocs[i].id ? analyzed : d))
-        );
-      }, delay);
-    });
+  const submit = useCallback(async (files: FilePayload[]) => {
+    setPhase("running");
+    setError(null);
+    setResponse(null);
+    setSelected(null);
+    try {
+      const r = await runTriage(files);
+      setResponse(r);
+      setPhase("done");
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase("error");
+    }
   }, []);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
-      if (e.dataTransfer.files.length > 0) {
-        processFiles(e.dataTransfer.files);
-      }
-    },
-    [processFiles]
-  );
+  const handleLoadDemo = useCallback(async () => {
+    setPhase("loading_files");
+    try {
+      const files = await loadDemoData();
+      setStagedCount(files.length);
+      await submit(files);
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase("error");
+    }
+  }, [submit]);
 
-  const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files.length > 0) {
-        processFiles(e.target.files);
-        e.target.value = "";
-      }
-    },
-    [processFiles]
-  );
+  const handleFiles = useCallback(async (fl: FileList | File[]) => {
+    setPhase("loading_files");
+    try {
+      const files = await readFiles(fl);
+      setStagedCount(files.length);
+      await submit(files);
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase("error");
+    }
+  }, [submit]);
 
-  const loadDemo = useCallback(() => {
-    const demoFiles: AnalyzedDoc[] = [
-      {
-        id: `demo-${Date.now()}-0`, name: "Q3-Financial-Statement.pdf", size: "2.4 MB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
-      },
-      {
-        id: `demo-${Date.now()}-1`, name: "KYC-Verification-ClientA.pdf", size: "840 KB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
-      },
-      {
-        id: `demo-${Date.now()}-2`, name: "Insurance-Policy-MC445.pdf", size: "1.1 MB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
-      },
-      {
-        id: `demo-${Date.now()}-3`, name: "Board-Resolution-2024.doc", size: "560 KB", type: "application/msword",
-        status: "analyzing", score: 0, issues: [], summary: "",
-      },
-      {
-        id: `demo-${Date.now()}-4`, name: "Tax-Return-FY2024.xlsx", size: "3.2 MB", type: "application/vnd.ms-excel",
-        status: "analyzing", score: 0, issues: [], summary: "",
-      },
-      {
-        id: `demo-${Date.now()}-5`, name: "Loan-Agreement-Draft.pdf", size: "1.8 MB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
-      },
-    ];
-
-    const demoResults: Partial<AnalyzedDoc>[] = [
-      {
-        status: "pass", score: 96,
-        summary: "Fully compliant regulatory filing. All required fields present, signatures valid, dates current.",
-        issues: [{ severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." }],
-      },
-      {
-        status: "warning", score: 74,
-        summary: "KYC verification document with inconsistent entity naming. Recommend standardizing before submission.",
-        issues: [
-          { severity: "warning", title: "Low resolution scan", detail: "Page 4 scan quality is below 150 DPI. May cause readability issues during audit.", location: "Page 4" },
-          { severity: "info", title: "Metadata missing", detail: "Document author and creation date are not embedded in file metadata." },
-        ],
-      },
-      {
-        status: "fail", score: 31,
-        summary: "Insurance policy document — expired validity date and missing signature block require immediate attention before processing.",
-        issues: [
-          { severity: "error", title: "Missing signature", detail: "Document requires authorized signatory on page 3. Signature field is empty.", location: "Page 3, Section 4.2" },
-          { severity: "error", title: "Expired date", detail: "The certification date has expired. Document was valid until 2024-12-31.", location: "Page 1, Header" },
-          { severity: "warning", title: "Inconsistent naming", detail: "Company name appears as both 'Acme Corp' and 'ACME Corporation' across sections.", location: "Pages 2, 5, 8" },
-        ],
-      },
-      {
-        status: "pass", score: 92,
-        summary: "Board resolution properly executed. All directors have signed, dates are current, and quorum was met.",
-        issues: [{ severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." }],
-      },
-      {
-        status: "fail", score: 38,
-        summary: "Tax return filing has critical calculation discrepancies. Revenue figures do not reconcile with supporting schedules.",
-        issues: [
-          { severity: "error", title: "Calculation discrepancy", detail: "Total revenue on page 2 (£842,000) does not match sum of quarterly figures (£831,400). Variance: £10,600.", location: "Page 2, Line 14" },
-          { severity: "error", title: "Missing schedule", detail: "Schedule C (Capital Allowances) is referenced but not included in the filing.", location: "Page 5" },
-        ],
-      },
-      {
-        status: "warning", score: 68,
-        summary: "Loan agreement draft has formatting issues and a clause referencing outdated regulatory framework. Review before execution.",
-        issues: [
-          { severity: "warning", title: "Outdated regulation reference", detail: "Clause 8.3 references FCA Handbook MCOB 11.6 which was superseded in Jan 2025.", location: "Page 7, Clause 8.3" },
-          { severity: "warning", title: "Formatting inconsistency", detail: "Section numbering jumps from 5.4 to 5.6 — section 5.5 appears to be missing.", location: "Page 4" },
-        ],
-      },
-    ];
-
-    setDocuments(demoFiles);
-    setSelectedDoc(null);
-
-    demoFiles.forEach((doc, i) => {
-      const delay = 800 + i * 600;
-      setTimeout(() => {
-        setDocuments((prev) =>
-          prev.map((d) =>
-            d.id === doc.id
-              ? { ...d, ...demoResults[i], analyzedAt: new Date().toLocaleTimeString() }
-              : d
-          )
-        );
-      }, delay);
+  const filteredTickets = useMemo(() => {
+    if (!response) return [];
+    const list = response.tickets.filter((t) => {
+      if (filter === "all") return true;
+      if (filter === "high_impact") return t.specter_impact?.band === "high";
+      if (filter === "reranked") return Boolean(t.specter_reranked);
+      return t.severity === filter;
     });
-  }, []);
+    return list;
+  }, [response, filter]);
 
-  const passCount = documents.filter((d) => d.status === "pass").length;
-  const warnCount = documents.filter((d) => d.status === "warning").length;
-  const failCount = documents.filter((d) => d.status === "fail").length;
-  const analyzingCount = documents.filter((d) => d.status === "analyzing").length;
+  const grouped = useMemo(() => {
+    const m = new Map<string, Ticket[]>();
+    for (const t of filteredTickets) {
+      const k = t.client?.parent_firm ?? "Unknown";
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(t);
+    }
+    return Array.from(m.entries());
+  }, [filteredTickets]);
+
+  const isBusy = phase === "loading_files" || phase === "running";
 
   return (
     <div className="flex h-full">
-      <div className="flex-1 overflow-y-auto">
-        {/* Hero banner */}
-        <div className="bg-brand-blue relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          </div>
-          <div className="relative px-10 py-12 max-w-5xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-[11px] font-semibold text-white/90 uppercase tracking-widest mb-5">
-              <Sparkles className="w-3 h-3" />
-              AI-Powered Compliance
-            </div>
-            <h1 className="text-[42px] leading-[1.1] font-black text-white tracking-tight mb-4">
-              Document compliance<br />analysis engine
-            </h1>
-            <p className="text-base text-white/75 max-w-lg leading-relaxed font-medium">
-              Upload your documents below. Our AI scans for missing signatures, expired dates,
-              inconsistent data, and regulatory gaps — flagging problems in seconds.
-            </p>
-          </div>
-        </div>
+      <div className="flex-1 p-8 overflow-y-auto">
+        <Hero />
 
-        <div className="px-10 py-8 max-w-5xl mx-auto">
-          {/* Upload zone */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <button
+            onClick={handleLoadDemo}
+            disabled={isBusy}
+            className="group relative bg-brand-blue hover:bg-brand-blue-dark disabled:opacity-60 disabled:cursor-wait text-white rounded-xl p-5 text-left transition-all shadow-sm flex items-center gap-4"
+          >
+            <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+              {isBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <PlayCircle className="w-5 h-5" />}
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-bold mb-0.5">Run on demo data</div>
+              <div className="text-[11px] opacity-80">6 files · LSEG-FXALL MiFIR feedback batch (2026-04-07)</div>
+            </div>
+            <ChevronRight className="w-4 h-4 opacity-60" />
+          </button>
+
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
             onDragLeave={() => setIsDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all mb-8 bg-white ${
-              isDragOver
-                ? "border-brand-blue bg-brand-blue-50 shadow-lg shadow-brand-blue/10"
-                : "border-border-medium hover:border-brand-blue-light hover:shadow-md"
-            }`}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragOver(false);
+              if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+            }}
+            onClick={() => !isBusy && fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-5 cursor-pointer transition-all flex items-center gap-4 ${
+              isDragOver ? "border-brand-blue bg-brand-blue-50" : "border-border-soft hover:border-brand-blue-100 hover:bg-surface-muted"
+            } ${isBusy ? "opacity-50 cursor-wait" : ""}`}
           >
             <input
               ref={fileInputRef}
               type="file"
               multiple
-              onChange={handleFileSelect}
+              onChange={(e) => e.target.files && handleFiles(e.target.files)}
               className="hidden"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
+              accept=".csv,.xml,.txt,.json"
             />
-            <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${isDragOver ? "bg-brand-blue" : "bg-brand-blue-50"} transition-colors`}>
-              <Upload className={`w-7 h-7 ${isDragOver ? "text-white" : "text-brand-blue"} transition-colors`} />
+            <div className="w-12 h-12 rounded-lg bg-surface-muted flex items-center justify-center shrink-0">
+              <Upload className="w-5 h-5 text-text-muted" />
             </div>
-            <div className="text-base font-bold text-text-heading mb-1">
-              {isDragOver ? "Drop files to analyze" : "Drag & drop documents here"}
-            </div>
-            <div className="text-sm text-text-muted mb-4">
-              or click to browse
-            </div>
-            <div className="inline-flex items-center gap-1.5 text-[11px] text-text-muted bg-surface-muted px-3 py-1.5 rounded-full font-medium">
-              PDF, DOC, XLS, CSV, images · up to 50MB each
+            <div className="flex-1">
+              <div className="text-sm font-bold text-text-heading mb-0.5">Drop your own files</div>
+              <div className="text-[11px] text-text-muted">CSV · XML · regulatory feedback bundles</div>
             </div>
           </div>
-
-          {/* Demo button */}
-          {documents.length === 0 && (
-            <div className="flex justify-center -mt-4 mb-8">
-              <button
-                onClick={(e) => { e.stopPropagation(); loadDemo(); }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand-blue text-white rounded-xl text-sm font-bold hover:bg-brand-blue-dark transition-colors shadow-md shadow-brand-blue/20"
-              >
-                <Sparkles className="w-4 h-4" />
-                Load Demo Documents
-              </button>
-            </div>
-          )}
-
-          {/* Stats row */}
-          {documents.length > 0 && (
-            <div className="grid grid-cols-4 gap-4 mb-8">
-              <StatCard icon={FileText} color="text-brand-blue" bg="bg-brand-blue-50" label="Total" value={documents.length.toString()} />
-              <StatCard icon={CheckCircle2} color="text-status-pass" bg="bg-status-pass-bg" label="Passed" value={passCount.toString()} />
-              <StatCard icon={AlertTriangle} color="text-status-warn" bg="bg-status-warn-bg" label="Warnings" value={warnCount.toString()} />
-              <StatCard icon={XCircle} color="text-status-fail" bg="bg-status-fail-bg" label="Issues" value={failCount.toString()} />
-            </div>
-          )}
-
-          {/* Results */}
-          {documents.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-extrabold text-text-heading tracking-tight">Analysis Results</h2>
-                {analyzingCount > 0 && (
-                  <span className="flex items-center gap-2 text-xs text-brand-blue font-semibold">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Analyzing {analyzingCount} document{analyzingCount > 1 ? "s" : ""}…
-                  </span>
-                )}
-              </div>
-              <div className="space-y-3">
-                {documents.map((doc) => {
-                  const cfg = statusConfig[doc.status];
-                  const Icon = cfg.icon;
-                  const isSelected = selectedDoc?.id === doc.id;
-                  const isProcessing = doc.status === "analyzing" || doc.status === "uploading";
-                  return (
-                    <button
-                      key={doc.id}
-                      onClick={() => !isProcessing && setSelectedDoc(doc)}
-                      disabled={isProcessing}
-                      className={`w-full text-left bg-white border rounded-xl p-5 flex items-center gap-4 transition-all shadow-sm ${
-                        isSelected
-                          ? "border-brand-blue ring-2 ring-brand-blue/10 shadow-md"
-                          : "border-border-soft hover:border-brand-blue-light hover:shadow-md"
-                      } ${isProcessing ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
-                    >
-                      <div className={`w-11 h-11 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}>
-                        <Icon className={`w-5 h-5 ${cfg.color} ${isProcessing ? "animate-spin" : ""}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-text-heading truncate">{doc.name}</div>
-                        <div className="text-xs text-text-muted mt-0.5">{doc.size} · {doc.type.split("/").pop()?.toUpperCase()}</div>
-                      </div>
-                      {!isProcessing && (
-                        <>
-                          <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
-                            {cfg.label}
-                          </span>
-                          <div className="w-20 shrink-0 text-right">
-                            <div className="text-lg font-extrabold text-text-heading">{doc.score}%</div>
-                            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden mt-1">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  doc.status === "pass" ? "bg-status-pass" : doc.status === "warning" ? "bg-status-warn" : "bg-status-fail"
-                                }`}
-                                style={{ width: `${doc.score}%` }}
-                              />
-                            </div>
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-text-muted shrink-0" />
-                        </>
-                      )}
-                      {isProcessing && (
-                        <span className="text-xs text-brand-blue font-semibold">Processing…</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
+
+        {isBusy && <PhaseStrip phase={phase} files={stagedCount} />}
+
+        {phase === "error" && (
+          <div className="bg-status-fail-bg border border-status-fail/30 text-status-fail text-sm rounded-xl p-4 mb-6">
+            <div className="font-semibold mb-1">Triage failed</div>
+            <div className="text-xs">{error}</div>
+          </div>
+        )}
+
+        {response && (
+          <>
+            <Stats stats={response.stats} durations={response.durations} model={response.model} />
+
+            {response.enrichment?.unavailable && (
+              <div className="bg-status-warn-bg border border-status-warn/30 rounded-xl p-3 mb-4 flex items-center gap-3 text-xs text-status-warn">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <div>
+                  <span className="font-semibold">Specter enrichment temporarily unavailable</span>
+                  <span className="text-text-body"> — triage proceeded without commercial intel ({response.enrichment.hits}/{response.enrichment.requested} firms enriched).</span>
+                </div>
+              </div>
+            )}
+
+            {response.stats.escalate > 0 && (
+              <div
+                onClick={() => setFilter("escalate")}
+                className="cursor-pointer bg-brand-blue-50 border border-brand-blue-100 rounded-xl p-4 mb-6 flex items-center gap-3 hover:bg-brand-blue-100 transition-colors"
+              >
+                <Brain className="w-4 h-4 text-brand-blue shrink-0" />
+                <div className="text-sm flex-1">
+                  <span className="font-semibold text-brand-blue">{response.stats.escalate} ticket{response.stats.escalate > 1 ? "s" : ""} routed to human review</span>
+                  <span className="text-text-body"> — confidence below 70% or missing data. Click to filter.</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-brand-blue" />
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <h2 className="text-base font-bold text-text-heading">Triage Queue</h2>
+              <div className="flex items-center gap-1 ml-auto flex-wrap">
+                {([
+                  { id: "all", label: "all" },
+                  { id: "fail", label: "fail" },
+                  { id: "escalate", label: "escalate" },
+                  { id: "warning", label: "warning" },
+                  { id: "high_impact", label: "high impact" },
+                  { id: "reranked", label: "specter-reranked" },
+                ] as const).map((k) => (
+                  <button
+                    key={k.id}
+                    onClick={() => setFilter(k.id)}
+                    className={`text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full transition-all ${
+                      filter === k.id ? "bg-brand-blue text-white" : "bg-surface-muted text-text-muted hover:bg-brand-blue-50"
+                    }`}
+                  >
+                    {k.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {grouped.map(([firm, tickets]) => (
+                <div key={firm} className="bg-surface border border-border-soft rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 bg-surface-muted border-b border-border-soft flex items-center gap-3">
+                    <Building2 className="w-4 h-4 text-text-muted" />
+                    <div className="text-sm font-semibold text-text-heading">{firm}</div>
+                    <div className="text-[11px] text-text-muted">
+                      {tickets.length} reject{tickets.length > 1 ? "s" : ""}
+                    </div>
+                    {tickets[0]?.parent_firm_intel && (
+                      <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-brand-blue bg-brand-blue-50 px-2 py-1 rounded-full border border-brand-blue-100 font-semibold">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Specter
+                      </span>
+                    )}
+                  </div>
+                  <div className="divide-y divide-border-soft">
+                    {tickets.map((t) => (
+                      <TicketRow
+                        key={`${t.reject_id}-${t.trade_ref}`}
+                        ticket={t}
+                        onClick={() => setSelected(t)}
+                        selected={selected?.trade_ref === t.trade_ref}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {grouped.length === 0 && (
+                <div className="text-center text-sm text-text-muted py-12">No tickets match this filter.</div>
+              )}
+            </div>
+          </>
+        )}
+
+        {!response && phase === "idle" && <EmptyState />}
       </div>
 
-      {/* Detail panel */}
-      {selectedDoc && (
-        <div className="w-[400px] border-l border-border-soft bg-white overflow-y-auto shrink-0 shadow-xl">
-          <div className="p-5 border-b border-border-soft flex items-center justify-between">
-            <h3 className="text-sm font-extrabold text-text-heading tracking-tight">Analysis Detail</h3>
-            <button onClick={() => setSelectedDoc(null)} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface-muted transition-colors">
-              <X className="w-4 h-4 text-text-muted" />
-            </button>
-          </div>
-
-          {/* Doc info + score */}
-          <div className="p-5 border-b border-border-soft">
-            <div className="flex items-start gap-3 mb-5">
-              <div className="w-11 h-11 rounded-xl bg-brand-blue-50 flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5 text-brand-blue" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-bold text-text-heading truncate">{selectedDoc.name}</div>
-                <div className="text-[11px] text-text-muted mt-0.5">{selectedDoc.size} · Analyzed at {selectedDoc.analyzedAt}</div>
-              </div>
-            </div>
-
-            <div className="bg-surface-muted rounded-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Compliance Score</div>
-                  <div className="text-4xl font-black text-text-heading tracking-tight">{selectedDoc.score}%</div>
-                </div>
-                <div className={`w-14 h-14 rounded-2xl ${statusConfig[selectedDoc.status].bg} flex items-center justify-center`}>
-                  {(() => {
-                    const Ic = statusConfig[selectedDoc.status].icon;
-                    return <Ic className={`w-7 h-7 ${statusConfig[selectedDoc.status].color}`} />;
-                  })()}
-                </div>
-              </div>
-              <div className="h-2.5 rounded-full bg-white overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    selectedDoc.status === "pass" ? "bg-status-pass" : selectedDoc.status === "warning" ? "bg-status-warn" : "bg-status-fail"
-                  }`}
-                  style={{ width: `${selectedDoc.score}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* AI Summary */}
-          <div className="p-5 border-b border-border-soft">
-            <div className="flex items-center gap-2 mb-3">
-              <Brain className="w-4 h-4 text-brand-blue" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">AI Summary</span>
-            </div>
-            <p className="text-sm text-text-body leading-relaxed">{selectedDoc.summary}</p>
-          </div>
-
-          {/* Issues */}
-          <div className="p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <FileWarning className="w-4 h-4 text-status-warn" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
-                Issues ({selectedDoc.issues.length})
-              </span>
-            </div>
-            <div className="space-y-3">
-              {selectedDoc.issues.map((issue, i) => {
-                const cfg = severityConfig[issue.severity];
-                const Ic = cfg.icon;
-                return (
-                  <div key={i} className={`${cfg.bg} border ${cfg.border} rounded-xl p-4`}>
-                    <div className="flex items-start gap-2.5">
-                      <Ic className={`w-4 h-4 ${cfg.color} shrink-0 mt-0.5`} />
-                      <div>
-                        <div className="text-sm font-bold text-text-heading">{issue.title}</div>
-                        <div className="text-xs text-text-body mt-1 leading-relaxed">{issue.detail}</div>
-                        {issue.location && (
-                          <div className="text-[11px] text-text-muted mt-2 flex items-center gap-1 font-medium">
-                            <Clock className="w-3 h-3" />
-                            {issue.location}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recommendation */}
-          {selectedDoc.status !== "pass" && (
-            <div className="p-5 border-t border-border-soft">
-              <div className="flex items-center gap-2 mb-3">
-                <Shield className="w-4 h-4 text-brand-blue" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Recommendation</span>
-              </div>
-              <div className="bg-brand-blue-50 border border-brand-blue-100 rounded-xl p-4">
-                <p className="text-sm text-brand-blue-dark leading-relaxed font-medium">
-                  {selectedDoc.status === "fail"
-                    ? "This document has critical issues that must be resolved before it can be accepted. Please address all errors and re-upload."
-                    : "This document has minor issues. Review the warnings and consider updating before final submission."}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+      {selected && (
+        <DetailPanel
+          ticket={selected}
+          onClose={() => setSelected(null)}
+          emailCopied={emailCopied}
+          setEmailCopied={setEmailCopied}
+        />
       )}
     </div>
   );
 }
 
+function Hero() {
+  return (
+    <div className="mb-6">
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-blue-50 border border-brand-blue-100 text-[10px] tracking-[0.15em] uppercase mb-4">
+        <Sparkles className="w-3 h-3 text-brand-blue" />
+        <span className="text-brand-blue font-bold">Cursor Composer-2</span>
+        <span className="text-text-muted">·</span>
+        <span className="text-status-pass font-bold">Specter Intel</span>
+        <span className="text-text-muted">·</span>
+        <span className="text-text-body">FCA / MiFIR Reject Triage</span>
+      </div>
+      <h1 className="text-3xl font-bold text-text-heading mb-2 tracking-tight">
+        Drop a regulatory reject batch.
+      </h1>
+      <p className="text-text-body text-sm max-w-[680px] leading-relaxed">
+        The agent ingests FCA reject feedback alongside your trade registry, the GLEIF authoritative LEI snapshot, and your relationship-management database — root-causes every reject, attributes it to a client and an RM, and drafts a remediation email enriched with Specter commercial intel on the parent firm.
+      </p>
+    </div>
+  );
+}
+
+function PhaseStrip({ phase, files }: { phase: Phase; files: number }) {
+  return (
+    <div className="bg-surface border border-border-soft rounded-xl p-4 mb-6 flex items-center gap-4 shadow-sm">
+      <Loader2 className="w-4 h-4 text-brand-blue animate-spin shrink-0" />
+      <div className="text-sm text-text-body flex-1">
+        {phase === "loading_files" ? `Loading files (${files})…` : `Cursor agent reasoning over ${files} files, then enriching with Specter…`}
+      </div>
+      <div className="text-[11px] text-text-muted">~12s typical</div>
+    </div>
+  );
+}
+
+function Stats({ stats, durations, model }: { stats: TriageResponse["stats"]; durations: TriageResponse["durations"]; model: string }) {
+  const autoResolvable = stats.warning;
+  const highImpact = stats.high_impact ?? 0;
+  const reranked = stats.reranked_by_specter ?? 0;
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+      <StatCard label="Total Rejects" value={stats.total.toString()} icon={FileText} accent="text-text-heading" bg="bg-surface-muted" />
+      <StatCard label="Auto-Resolvable" value={autoResolvable.toString()} icon={AlertTriangle} accent="text-status-warn" bg="bg-status-warn-bg" />
+      <StatCard label="Needs Review" value={stats.escalate.toString()} icon={Brain} accent="text-brand-blue" bg="bg-brand-blue-50" />
+      <StatCard label="Blocked" value={stats.fail.toString()} icon={XCircle} accent="text-status-fail" bg="bg-status-fail-bg" />
+      <StatCard label="High Impact" value={highImpact.toString()} icon={Sparkles} accent="text-status-pass" bg="bg-status-pass-bg" sub={`${reranked} reranked`} />
+      <StatCard label="Total Latency" value={`${(durations.total_ms / 1000).toFixed(1)}s`} icon={TrendingUp} accent="text-text-heading" bg="bg-surface-muted" sub={model} />
+    </div>
+  );
+}
+
 function StatCard({
-  icon: Icon,
-  color,
-  bg,
-  label,
-  value,
+  label, value, icon: Icon, accent, bg, sub,
 }: {
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-  label: string;
-  value: string;
+  label: string; value: string; icon: React.ElementType; accent: string; bg: string; sub?: string;
 }) {
   return (
-    <div className="bg-white border border-border-soft rounded-xl p-4 flex items-center gap-3 shadow-sm">
-      <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-        <Icon className={`w-5 h-5 ${color}`} />
+    <div className="bg-white border border-border-soft rounded-xl p-4 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`w-7 h-7 rounded-lg ${bg} flex items-center justify-center`}>
+          <Icon className={`w-3.5 h-3.5 ${accent}`} />
+        </div>
+        <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold">{label}</div>
       </div>
-      <div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">{label}</div>
-        <div className="text-2xl font-extrabold text-text-heading">{value}</div>
+      <div className={`text-xl font-extrabold font-mono ${accent}`}>{value}</div>
+      {sub && <div className="text-[10px] text-text-muted mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+function TicketRow({ ticket, onClick, selected }: { ticket: Ticket; onClick: () => void; selected: boolean }) {
+  const cfg = SEVERITY[ticket.severity];
+  const Ic = cfg.icon;
+  const impact = ticket.specter_impact;
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-all ${selected ? "bg-brand-blue-50" : "hover:bg-surface-muted"}`}
+    >
+      <div className={`w-8 h-8 rounded-lg ${cfg.bg} flex items-center justify-center shrink-0`}>
+        <Ic className={`w-3.5 h-3.5 ${cfg.color}`} />
       </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-text-heading truncate">
+          <span className="font-mono text-[12px]">{ticket.trade_ref}</span> <span className="text-text-muted">·</span> {ticket.reject_reason}
+        </div>
+        <div className="text-[11px] text-text-muted truncate mt-0.5">
+          {ticket.fund.name} · LEI {ticket.bad_lei.slice(0, 12)}… · {ticket.lei_status}
+        </div>
+      </div>
+      <div className="hidden md:flex flex-col items-end shrink-0 gap-1 mr-2">
+        <div className="text-[10px] text-text-muted">{ticket.rm?.name ?? "no RM"}</div>
+        <div className="flex items-center gap-1">
+          <div className="w-12 h-1 rounded-full bg-border-soft overflow-hidden">
+            <div className={`h-full rounded-full ${ticket.confidence >= 0.7 ? "bg-status-pass" : "bg-status-warn"}`} style={{ width: `${ticket.confidence * 100}%` }} />
+          </div>
+          <div className="text-[10px] font-mono text-text-muted">{Math.round(ticket.confidence * 100)}%</div>
+        </div>
+      </div>
+      {impact && impact.band !== "low" && (
+        <span
+          title={`Specter impact ${impact.score}/100 — ${impact.signal}`}
+          className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-bold shrink-0 ${
+            impact.band === "high" ? "bg-status-pass-bg text-status-pass" : "bg-brand-blue-50 text-brand-blue"
+          }`}
+        >
+          {impact.band === "high" ? "High Impact" : "Mid Impact"}
+        </span>
+      )}
+      {ticket.specter_reranked && (
+        <span title="Reordered by Specter impact score" className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-brand-blue-50 text-brand-blue font-bold shrink-0">
+          Reranked
+        </span>
+      )}
+      <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full ${cfg.bg} ${cfg.color} font-bold shrink-0`}>
+        {cfg.label}
+      </span>
+      <ChevronRight className="w-4 h-4 text-text-muted shrink-0" />
+    </button>
+  );
+}
+
+function DetailPanel({
+  ticket, onClose, emailCopied, setEmailCopied,
+}: {
+  ticket: Ticket; onClose: () => void; emailCopied: boolean; setEmailCopied: (v: boolean) => void;
+}) {
+  const intel = ticket.parent_firm_intel;
+
+  const copyEmail = () => {
+    const text = `To: ${ticket.rm?.email ?? "(no RM)"}\nSubject: ${ticket.rm_email_draft.subject}\n\n${ticket.rm_email_draft.body}`;
+    navigator.clipboard.writeText(text);
+    setEmailCopied(true);
+    setTimeout(() => setEmailCopied(false), 1800);
+  };
+
+  return (
+    <div className="w-[440px] border-l border-border-soft bg-surface overflow-y-auto shrink-0">
+      <div className="px-5 py-4 border-b border-border-soft flex items-center justify-between sticky top-0 bg-surface z-10">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-brand-blue" />
+          <span className="text-sm font-bold text-text-heading">Triage Detail</span>
+        </div>
+        <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface-muted">
+          <X className="w-4 h-4 text-text-muted" />
+        </button>
+      </div>
+
+      <div className="p-5 border-b border-border-soft">
+        <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-1">Trade Reference</div>
+        <div className="font-mono text-sm font-bold text-text-heading mb-3 break-all">{ticket.trade_ref}</div>
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <KV label="Reject Code" value={ticket.reject_code} mono />
+          <KV label="LEI Status" value={ticket.lei_status} mono accent="text-status-fail" />
+          <KV label="Field" value={ticket.field_name} mono />
+          <KV label="Confidence" value={`${Math.round(ticket.confidence * 100)}%`} mono />
+        </div>
+      </div>
+
+      <Section icon={Database} title="Root Cause">
+        <p className="text-xs text-text-body leading-relaxed">{ticket.root_cause}</p>
+        <div className="mt-3 bg-surface-muted rounded-lg p-3 border border-border-soft">
+          <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-1">Bad LEI</div>
+          <div className="font-mono text-xs text-text-heading break-all">{ticket.bad_lei}</div>
+        </div>
+      </Section>
+
+      <Section icon={Shield} title="Recommended Action">
+        <p className="text-xs text-text-body leading-relaxed">{ticket.recommended_action}</p>
+      </Section>
+
+      {intel && (
+        <Section icon={Sparkles} title="Specter Intel" badge={intel.matched_on === "domain" ? "matched on domain" : "matched on name"}>
+          <div className="bg-brand-blue-50 border border-brand-blue-100 rounded-lg p-3">
+            <div className="text-sm font-bold text-brand-blue mb-1">{intel.organization_name}</div>
+            {ticket.specter_impact && (
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold ${
+                  ticket.specter_impact.band === "high" ? "bg-status-pass-bg text-status-pass" : ticket.specter_impact.band === "medium" ? "bg-brand-blue-100 text-brand-blue" : "bg-surface-muted text-text-muted"
+                }`}>
+                  Impact {ticket.specter_impact.score}/100 · {ticket.specter_impact.band}
+                </div>
+                {ticket.specter_escalated && (
+                  <div className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-blue-50 text-brand-blue font-bold">
+                    Policy Escalation
+                  </div>
+                )}
+                {ticket.specter_reranked && (
+                  <div className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-blue-50 text-brand-blue font-bold">
+                    Reranked
+                  </div>
+                )}
+              </div>
+            )}
+            {intel.tagline && <div className="text-[11px] text-text-body italic mb-2 leading-relaxed">{intel.tagline}</div>}
+            {intel.traction_highlights && (
+              <div className="mb-2">
+                <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-0.5">Traction</div>
+                <div className="text-[11px] text-text-body">{intel.traction_highlights}</div>
+              </div>
+            )}
+            {intel.business_models?.length ? (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {intel.business_models.map((m) => (
+                  <span key={m} className="text-[10px] bg-white border border-brand-blue-100 text-brand-blue px-2 py-0.5 rounded-full font-medium">{m}</span>
+                ))}
+              </div>
+            ) : null}
+            {intel.tags?.length ? (
+              <div className="flex flex-wrap gap-1">
+                {intel.tags.slice(0, 6).map((t) => (
+                  <span key={t} className="text-[10px] text-text-muted">#{t.toLowerCase().replace(/\s+/g, "")}</span>
+                ))}
+              </div>
+            ) : null}
+            {intel.last_updated && (
+              <div className="text-[10px] text-text-muted mt-2">Last updated {intel.last_updated} · via Specter</div>
+            )}
+          </div>
+        </Section>
+      )}
+
+      <Section
+        icon={Mail}
+        title="RM Email Draft"
+        actions={
+          <button
+            onClick={copyEmail}
+            className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md bg-brand-blue text-white hover:bg-brand-blue-dark flex items-center gap-1 font-bold"
+          >
+            <Copy className="w-3 h-3" />
+            {emailCopied ? "Copied" : "Copy"}
+          </button>
+        }
+      >
+        {ticket.rm ? (
+          <>
+            <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-1">To</div>
+            <div className="text-xs font-mono text-text-heading mb-3 break-all">{ticket.rm.name} &lt;{ticket.rm.email}&gt;</div>
+            <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-1">Subject</div>
+            <div className="text-xs text-text-heading mb-3 font-medium">{ticket.rm_email_draft.subject}</div>
+            <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold mb-1">Body</div>
+            <textarea
+              readOnly
+              value={ticket.rm_email_draft.body}
+              className="w-full h-48 text-[11px] font-mono text-text-body bg-surface-muted border border-border-soft rounded-lg p-3 leading-relaxed resize-none"
+            />
+          </>
+        ) : (
+          <div className="bg-status-warn-bg border border-status-warn/30 rounded-lg p-3 text-xs text-status-warn">
+            No RM mapped for this client. Escalate to compliance ops manually.
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}
+
+function KV({ label, value, mono, accent }: { label: string; value: string; mono?: boolean; accent?: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold">{label}</div>
+      <div className={`${mono ? "font-mono" : ""} ${accent ?? "text-text-heading"} font-semibold`}>{value}</div>
+    </div>
+  );
+}
+
+function Section({
+  icon: Icon, title, children, badge, actions,
+}: {
+  icon: React.ElementType; title: string; children: React.ReactNode; badge?: string; actions?: React.ReactNode;
+}) {
+  return (
+    <div className="p-5 border-b border-border-soft last:border-b-0">
+      <div className="flex items-center gap-2 mb-3">
+        <Icon className="w-3.5 h-3.5 text-text-muted" />
+        <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold">{title}</div>
+        {badge && <span className="text-[10px] text-text-muted lowercase italic">{badge}</span>}
+        <div className="ml-auto">{actions}</div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="border border-dashed border-border-soft rounded-xl p-12 text-center bg-white">
+      <Database className="w-10 h-10 mx-auto mb-3 text-text-muted" />
+      <div className="text-sm font-bold text-text-heading mb-1">No triage run yet</div>
+      <div className="text-xs text-text-muted">Click <em>Run on demo data</em> above, or drop your own MiFIR feedback bundle.</div>
     </div>
   );
 }

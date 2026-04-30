@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun install *)",
+      "WebFetch(domain:docs.cursor.com)",
+      "WebFetch(domain:cursor.com)",
+      "Bash(npm view *)",
+      "Bash(tar -xzf cursor-sdk-*.tgz)",
+      "Bash(curl -s -X POST http://localhost:8787/analyze -H 'content-type: application/json' -d '{\"filename\":\"sample-contract.txt\",\"mimeType\":\"text/plain\",\"text\":\"SERVICES AGREEMENT\\\\n\\\\nThis agreement is between Acme Corp and ACME Corporation.\\\\nValid from: 2023-01-01\\\\nValid until: 2024-12-31\\\\n\\\\nSignature: ____________________\\\\nDate signed: \\\\n\\\\nClause 1. The party agrees to provide services as described.\\\\nClause 2. Payment due within 30 days.\\\\n\"}')",
+      "Bash(curl -s -u \"826917e853d4784bf4e6890cdd479a1d44a7903e383167f6cff91441f7a7b0ea:\" https://api.cursor.com/v0/me)",
+      "Bash(curl -s -u \"826917e853d4784bf4e6890cdd479a1d44a7903e383167f6cff91441f7a7b0ea:\" https://api.cursor.com/v0/models)",
+      "Bash(curl -sv -u \"826917e853d4784bf4e6890cdd479a1d44a7903e383167f6cff91441f7a7b0ea:\" https://api.cursor.com/teams/members)",
+      "WebFetch(domain:api.tryspecter.com)",
+      "Bash(curl -sv -H \"X-API-Key: 826917e853d4784bf4e6890cdd479a1d44a7903e383167f6cff91441f7a7b0ea\" https://api.tryspecter.com/v1/companies)",
+      "Bash(curl -s -X POST -H \"X-API-KEY: 826917e853d4784bf4e6890cdd479a1d44a7903e383167f6cff91441f7a7b0ea\" -H \"Content-Type: application/json\" -d '{\"domain\":\"stripe.com\"}' https://app.tryspecter.com/api/v1/companies)",
+      "Bash(curl -s -u \"crsr_3017e4cdcbeae2aa6e0557c9187e6cf4e5f4498073985447defca528dbbc4b10:\" https://api.cursor.com/v0/me)",
+      "Bash(curl -s -u \"crsr_3017e4cdcbeae2aa6e0557c9187e6cf4e5f4498073985447defca528dbbc4b10:\" https://api.cursor.com/teams/members)",
+      "Bash(curl -s -u \"crsr_3017e4cdcbeae2aa6e0557c9187e6cf4e5f4498073985447defca528dbbc4b10:\" https://api.cursor.com/v0/agents)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(mkdir -p empty-cwd)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}
