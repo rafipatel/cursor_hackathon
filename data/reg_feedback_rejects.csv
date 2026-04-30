@@ -1,0 +1,4 @@
+transaction_reference_number,rejection_code,rejection_description,rejected_field,rejected_value,feedback_timestamp
+FXALL-20260407-001,LEIV001,Invalid LEI - Entity identifier has lapsed and is no longer valid for reporting purposes,BuyerIdentificationCode,213800FERQ5LE3H0XU88,2026-04-07T08:30:00Z
+FXALL-20260407-002,LEIV001,Invalid LEI - Entity identifier has lapsed and is no longer valid for reporting purposes,BuyerIdentificationCode,213800FERQ5LE3H0XU88,2026-04-07T08:30:01Z
+FXALL-20260407-003,LEIV002,Invalid LEI - Entity identifier has been annulled and retired from the GLEIF database,BuyerIdentificationCode,5299000J2N45DDNE4Y28,2026-04-07T08:30:02Z

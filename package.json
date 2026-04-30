@@ -1,0 +1,20 @@
+{
+  "name": "cursor-hackathon-rejection-remediation",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:frontend": "cd frontend && bun dev",
+    "build:frontend": "cd frontend && bun run build"
+  },
+  "dependencies": {
+    "@cursor/sdk": "latest",
+    "@vercel/node": "^5.7.13",
+    "csv-parse": "^5.6.0",
+    "fast-xml-parser": "^4.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}
