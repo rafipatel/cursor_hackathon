@@ -7,7 +7,6 @@ import {
   XCircle,
   Loader2,
   X,
-  ChevronRight,
   Brain,
   Shield,
   Clock,
@@ -39,16 +38,49 @@ interface AnalyzedDoc {
 
 const mockIssues: Record<string, Issue[]> = {
   error: [
-    { severity: "error", title: "Missing signature", detail: "Document requires authorized signatory on page 3. Signature field is empty.", location: "Page 3, Section 4.2" },
-    { severity: "error", title: "Expired date", detail: "The certification date has expired. Document was valid until 2024-12-31.", location: "Page 1, Header" },
-    { severity: "warning", title: "Inconsistent naming", detail: "Company name appears as both 'Acme Corp' and 'ACME Corporation' across sections.", location: "Pages 2, 5, 8" },
+    {
+      severity: "error",
+      title: "Missing signature",
+      detail:
+        "Document requires authorized signatory on page 3. Signature field is empty.",
+      location: "Page 3, Section 4.2",
+    },
+    {
+      severity: "error",
+      title: "Expired date",
+      detail:
+        "The certification date has expired. Document was valid until 2024-12-31.",
+      location: "Page 1, Header",
+    },
+    {
+      severity: "warning",
+      title: "Inconsistent naming",
+      detail:
+        "Company name appears as both 'Acme Corp' and 'ACME Corporation' across sections.",
+      location: "Pages 2, 5, 8",
+    },
   ],
   warning: [
-    { severity: "warning", title: "Low resolution scan", detail: "Page 4 scan quality is below 150 DPI. May cause readability issues during audit.", location: "Page 4" },
-    { severity: "info", title: "Metadata missing", detail: "Document author and creation date are not embedded in file metadata." },
+    {
+      severity: "warning",
+      title: "Low resolution scan",
+      detail:
+        "Page 4 scan quality is below 150 DPI. May cause readability issues during audit.",
+      location: "Page 4",
+    },
+    {
+      severity: "info",
+      title: "Metadata missing",
+      detail:
+        "Document author and creation date are not embedded in file metadata.",
+    },
   ],
   clean: [
-    { severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." },
+    {
+      severity: "info",
+      title: "All checks passed",
+      detail: "Document meets all compliance requirements. No issues found.",
+    },
   ],
 };
 
@@ -84,7 +116,10 @@ function generateMockAnalysis(file: File, index: number): AnalyzedDoc {
   }
 
   const sizeKB = file.size / 1024;
-  const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${Math.round(sizeKB)} KB`;
+  const sizeStr =
+    sizeKB > 1024
+      ? `${(sizeKB / 1024).toFixed(1)} MB`
+      : `${Math.round(sizeKB)} KB`;
 
   return {
     id: `doc-${Date.now()}-${index}`,
@@ -99,18 +134,72 @@ function generateMockAnalysis(file: File, index: number): AnalyzedDoc {
   };
 }
 
-const statusConfig: Record<DocStatus, { icon: React.ElementType; color: string; bg: string; border: string; label: string }> = {
-  uploading: { icon: Loader2, color: "text-brand-blue", bg: "bg-brand-blue-50", border: "border-brand-blue-100", label: "Uploading" },
-  analyzing: { icon: Loader2, color: "text-brand-blue", bg: "bg-brand-blue-50", border: "border-brand-blue-100", label: "Analyzing" },
-  pass: { icon: CheckCircle2, color: "text-status-pass", bg: "bg-status-pass-bg", border: "border-status-pass/20", label: "Passed" },
-  warning: { icon: AlertTriangle, color: "text-status-warn", bg: "bg-status-warn-bg", border: "border-status-warn/20", label: "Warnings" },
-  fail: { icon: XCircle, color: "text-status-fail", bg: "bg-status-fail-bg", border: "border-status-fail/20", label: "Issues Found" },
+const statusConfig: Record<
+  DocStatus,
+  {
+    icon: React.ElementType;
+    color: string;
+    bg: string;
+    border: string;
+    label: string;
+  }
+> = {
+  uploading: {
+    icon: Loader2,
+    color: "text-brand-blue",
+    bg: "bg-brand-blue-50",
+    border: "border-brand-blue-100",
+    label: "Uploading",
+  },
+  analyzing: {
+    icon: Loader2,
+    color: "text-brand-blue",
+    bg: "bg-brand-blue-50",
+    border: "border-brand-blue-100",
+    label: "Analyzing",
+  },
+  pass: {
+    icon: CheckCircle2,
+    color: "text-status-pass",
+    bg: "bg-status-pass-bg",
+    border: "border-status-pass/20",
+    label: "Passed",
+  },
+  warning: {
+    icon: AlertTriangle,
+    color: "text-status-warn",
+    bg: "bg-status-warn-bg",
+    border: "border-status-warn/20",
+    label: "Warnings",
+  },
+  fail: {
+    icon: XCircle,
+    color: "text-status-fail",
+    bg: "bg-status-fail-bg",
+    border: "border-status-fail/20",
+    label: "Issues Found",
+  },
 };
 
 const severityConfig = {
-  error: { icon: XCircle, color: "text-status-fail", bg: "bg-status-fail-bg", border: "border-status-fail/20" },
-  warning: { icon: AlertTriangle, color: "text-status-warn", bg: "bg-status-warn-bg", border: "border-status-warn/20" },
-  info: { icon: CheckCircle2, color: "text-brand-blue", bg: "bg-brand-blue-50", border: "border-brand-blue-100" },
+  error: {
+    icon: XCircle,
+    color: "text-status-fail",
+    bg: "bg-status-fail-bg",
+    border: "border-status-fail/20",
+  },
+  warning: {
+    icon: AlertTriangle,
+    color: "text-status-warn",
+    bg: "bg-status-warn-bg",
+    border: "border-status-warn/20",
+  },
+  info: {
+    icon: CheckCircle2,
+    color: "text-brand-blue",
+    bg: "bg-brand-blue-50",
+    border: "border-brand-blue-100",
+  },
 };
 
 export default function DocumentAnalyzer() {
@@ -141,7 +230,7 @@ export default function DocumentAnalyzer() {
         const analyzed = generateMockAnalysis(file, i);
         analyzed.id = newDocs[i].id;
         setDocuments((prev) =>
-          prev.map((d) => (d.id === newDocs[i].id ? analyzed : d))
+          prev.map((d) => (d.id === newDocs[i].id ? analyzed : d)),
         );
       }, delay);
     });
@@ -155,7 +244,7 @@ export default function DocumentAnalyzer() {
         processFiles(e.dataTransfer.files);
       }
     },
-    [processFiles]
+    [processFiles],
   );
 
   const handleFileSelect = useCallback(
@@ -165,79 +254,194 @@ export default function DocumentAnalyzer() {
         e.target.value = "";
       }
     },
-    [processFiles]
+    [processFiles],
   );
 
   const loadDemo = useCallback(() => {
     const demoFiles: AnalyzedDoc[] = [
       {
-        id: `demo-${Date.now()}-0`, name: "Q3-Financial-Statement.pdf", size: "2.4 MB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
+        id: `demo-${Date.now()}-0`,
+        name: "Q3-Financial-Statement.pdf",
+        size: "2.4 MB",
+        type: "application/pdf",
+        status: "analyzing",
+        score: 0,
+        issues: [],
+        summary: "",
       },
       {
-        id: `demo-${Date.now()}-1`, name: "KYC-Verification-ClientA.pdf", size: "840 KB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
+        id: `demo-${Date.now()}-1`,
+        name: "KYC-Verification-ClientA.pdf",
+        size: "840 KB",
+        type: "application/pdf",
+        status: "analyzing",
+        score: 0,
+        issues: [],
+        summary: "",
       },
       {
-        id: `demo-${Date.now()}-2`, name: "Insurance-Policy-MC445.pdf", size: "1.1 MB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
+        id: `demo-${Date.now()}-2`,
+        name: "Insurance-Policy-MC445.pdf",
+        size: "1.1 MB",
+        type: "application/pdf",
+        status: "analyzing",
+        score: 0,
+        issues: [],
+        summary: "",
       },
       {
-        id: `demo-${Date.now()}-3`, name: "Board-Resolution-2024.doc", size: "560 KB", type: "application/msword",
-        status: "analyzing", score: 0, issues: [], summary: "",
+        id: `demo-${Date.now()}-3`,
+        name: "Board-Resolution-2024.doc",
+        size: "560 KB",
+        type: "application/msword",
+        status: "analyzing",
+        score: 0,
+        issues: [],
+        summary: "",
       },
       {
-        id: `demo-${Date.now()}-4`, name: "Tax-Return-FY2024.xlsx", size: "3.2 MB", type: "application/vnd.ms-excel",
-        status: "analyzing", score: 0, issues: [], summary: "",
+        id: `demo-${Date.now()}-4`,
+        name: "Tax-Return-FY2024.xlsx",
+        size: "3.2 MB",
+        type: "application/vnd.ms-excel",
+        status: "analyzing",
+        score: 0,
+        issues: [],
+        summary: "",
       },
       {
-        id: `demo-${Date.now()}-5`, name: "Loan-Agreement-Draft.pdf", size: "1.8 MB", type: "application/pdf",
-        status: "analyzing", score: 0, issues: [], summary: "",
+        id: `demo-${Date.now()}-5`,
+        name: "Loan-Agreement-Draft.pdf",
+        size: "1.8 MB",
+        type: "application/pdf",
+        status: "analyzing",
+        score: 0,
+        issues: [],
+        summary: "",
       },
     ];
 
     const demoResults: Partial<AnalyzedDoc>[] = [
       {
-        status: "pass", score: 96,
-        summary: "Fully compliant regulatory filing. All required fields present, signatures valid, dates current.",
-        issues: [{ severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." }],
-      },
-      {
-        status: "warning", score: 74,
-        summary: "KYC verification document with inconsistent entity naming. Recommend standardizing before submission.",
+        status: "pass",
+        score: 96,
+        summary:
+          "Fully compliant regulatory filing. All required fields present, signatures valid, dates current.",
         issues: [
-          { severity: "warning", title: "Low resolution scan", detail: "Page 4 scan quality is below 150 DPI. May cause readability issues during audit.", location: "Page 4" },
-          { severity: "info", title: "Metadata missing", detail: "Document author and creation date are not embedded in file metadata." },
+          {
+            severity: "info",
+            title: "All checks passed",
+            detail:
+              "Document meets all compliance requirements. No issues found.",
+          },
         ],
       },
       {
-        status: "fail", score: 31,
-        summary: "Insurance policy document — expired validity date and missing signature block require immediate attention before processing.",
+        status: "warning",
+        score: 74,
+        summary:
+          "KYC verification document with inconsistent entity naming. Recommend standardizing before submission.",
         issues: [
-          { severity: "error", title: "Missing signature", detail: "Document requires authorized signatory on page 3. Signature field is empty.", location: "Page 3, Section 4.2" },
-          { severity: "error", title: "Expired date", detail: "The certification date has expired. Document was valid until 2024-12-31.", location: "Page 1, Header" },
-          { severity: "warning", title: "Inconsistent naming", detail: "Company name appears as both 'Acme Corp' and 'ACME Corporation' across sections.", location: "Pages 2, 5, 8" },
+          {
+            severity: "warning",
+            title: "Low resolution scan",
+            detail:
+              "Page 4 scan quality is below 150 DPI. May cause readability issues during audit.",
+            location: "Page 4",
+          },
+          {
+            severity: "info",
+            title: "Metadata missing",
+            detail:
+              "Document author and creation date are not embedded in file metadata.",
+          },
         ],
       },
       {
-        status: "pass", score: 92,
-        summary: "Board resolution properly executed. All directors have signed, dates are current, and quorum was met.",
-        issues: [{ severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." }],
-      },
-      {
-        status: "fail", score: 38,
-        summary: "Tax return filing has critical calculation discrepancies. Revenue figures do not reconcile with supporting schedules.",
+        status: "fail",
+        score: 31,
+        summary:
+          "Insurance policy document — expired validity date and missing signature block require immediate attention before processing.",
         issues: [
-          { severity: "error", title: "Calculation discrepancy", detail: "Total revenue on page 2 (£842,000) does not match sum of quarterly figures (£831,400). Variance: £10,600.", location: "Page 2, Line 14" },
-          { severity: "error", title: "Missing schedule", detail: "Schedule C (Capital Allowances) is referenced but not included in the filing.", location: "Page 5" },
+          {
+            severity: "error",
+            title: "Missing signature",
+            detail:
+              "Document requires authorized signatory on page 3. Signature field is empty.",
+            location: "Page 3, Section 4.2",
+          },
+          {
+            severity: "error",
+            title: "Expired date",
+            detail:
+              "The certification date has expired. Document was valid until 2024-12-31.",
+            location: "Page 1, Header",
+          },
+          {
+            severity: "warning",
+            title: "Inconsistent naming",
+            detail:
+              "Company name appears as both 'Acme Corp' and 'ACME Corporation' across sections.",
+            location: "Pages 2, 5, 8",
+          },
         ],
       },
       {
-        status: "warning", score: 68,
-        summary: "Loan agreement draft has formatting issues and a clause referencing outdated regulatory framework. Review before execution.",
+        status: "pass",
+        score: 92,
+        summary:
+          "Board resolution properly executed. All directors have signed, dates are current, and quorum was met.",
         issues: [
-          { severity: "warning", title: "Outdated regulation reference", detail: "Clause 8.3 references FCA Handbook MCOB 11.6 which was superseded in Jan 2025.", location: "Page 7, Clause 8.3" },
-          { severity: "warning", title: "Formatting inconsistency", detail: "Section numbering jumps from 5.4 to 5.6 — section 5.5 appears to be missing.", location: "Page 4" },
+          {
+            severity: "info",
+            title: "All checks passed",
+            detail:
+              "Document meets all compliance requirements. No issues found.",
+          },
+        ],
+      },
+      {
+        status: "fail",
+        score: 38,
+        summary:
+          "Tax return filing has critical calculation discrepancies. Revenue figures do not reconcile with supporting schedules.",
+        issues: [
+          {
+            severity: "error",
+            title: "Calculation discrepancy",
+            detail:
+              "Total revenue on page 2 (£842,000) does not match sum of quarterly figures (£831,400). Variance: £10,600.",
+            location: "Page 2, Line 14",
+          },
+          {
+            severity: "error",
+            title: "Missing schedule",
+            detail:
+              "Schedule C (Capital Allowances) is referenced but not included in the filing.",
+            location: "Page 5",
+          },
+        ],
+      },
+      {
+        status: "warning",
+        score: 68,
+        summary:
+          "Loan agreement draft has formatting issues and a clause referencing outdated regulatory framework. Review before execution.",
+        issues: [
+          {
+            severity: "warning",
+            title: "Outdated regulation reference",
+            detail:
+              "Clause 8.3 references FCA Handbook MCOB 11.6 which was superseded in Jan 2025.",
+            location: "Page 7, Clause 8.3",
+          },
+          {
+            severity: "warning",
+            title: "Formatting inconsistency",
+            detail:
+              "Section numbering jumps from 5.4 to 5.6 — section 5.5 appears to be missing.",
+            location: "Page 4",
+          },
         ],
       },
     ];
@@ -251,9 +455,13 @@ export default function DocumentAnalyzer() {
         setDocuments((prev) =>
           prev.map((d) =>
             d.id === doc.id
-              ? { ...d, ...demoResults[i], analyzedAt: new Date().toLocaleTimeString() }
-              : d
-          )
+              ? {
+                  ...d,
+                  ...demoResults[i],
+                  analyzedAt: new Date().toLocaleTimeString(),
+                }
+              : d,
+          ),
         );
       }, delay);
     });
@@ -262,49 +470,27 @@ export default function DocumentAnalyzer() {
   const passCount = documents.filter((d) => d.status === "pass").length;
   const warnCount = documents.filter((d) => d.status === "warning").length;
   const failCount = documents.filter((d) => d.status === "fail").length;
-  const analyzingCount = documents.filter((d) => d.status === "analyzing").length;
+  const analyzingCount = documents.filter(
+    (d) => d.status === "analyzing",
+  ).length;
 
   return (
     <div className="flex h-full">
       <div className="flex-1 overflow-y-auto">
-        {/* Hero banner */}
-        <div className="bg-brand-blue relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          </div>
-          <div className="relative px-10 py-12 max-w-5xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-[11px] font-semibold text-white/90 uppercase tracking-widest mb-5">
-              <Sparkles className="w-3 h-3" />
-              AI-Powered Compliance
-            </div>
-            <h1 className="text-[42px] leading-[1.1] font-black text-white tracking-tight mb-4">
-              Document compliance<br />analysis engine
-            </h1>
-            <p className="text-base text-white/75 max-w-lg leading-relaxed font-medium">
-              Upload your documents below. Our AI scans for missing signatures, expired dates,
-              inconsistent data, and regulatory gaps — flagging problems in seconds.
-            </p>
-          </div>
-        </div>
-
         <div className="px-10 py-8 max-w-5xl mx-auto">
           {/* Upload zone */}
           <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all mb-8 bg-white ${
+            className={`relative border-2 border-dashed rounded-none p-12 text-center cursor-pointer transition-all mb-8 bg-white/25 shadow-sm shadow-slate-500/20 ${
               isDragOver
-                ? "border-brand-blue bg-brand-blue-50 shadow-lg shadow-brand-blue/10"
-                : "border-border-medium hover:border-brand-blue-light hover:shadow-md"
+                ? "border-brand-blue bg-brand-blue-50/80 shadow-[0_8px_20px_rgba(80,104,145,0.18)]"
+                : "border-border-medium hover:border-brand-blue-light hover:shadow-[0_8px_20px_rgba(80,104,145,0.14)]"
             }`}
           >
             <input
@@ -315,11 +501,17 @@ export default function DocumentAnalyzer() {
               className="hidden"
               accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
             />
-            <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${isDragOver ? "bg-brand-blue" : "bg-brand-blue-50"} transition-colors`}>
-              <Upload className={`w-7 h-7 ${isDragOver ? "text-white" : "text-brand-blue"} transition-colors`} />
+            <div
+              className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${isDragOver ? "bg-brand-blue" : "bg-brand-blue-50"} transition-colors`}
+            >
+              <Upload
+                className={`w-7 h-7 ${isDragOver ? "text-white" : "text-brand-blue"} transition-colors`}
+              />
             </div>
             <div className="text-base font-bold text-text-heading mb-1">
-              {isDragOver ? "Drop files to analyze" : "Drag & drop documents here"}
+              {isDragOver
+                ? "Drop files to analyze"
+                : "Drag & drop documents here"}
             </div>
             <div className="text-sm text-text-muted mb-4">
               or click to browse
@@ -333,7 +525,10 @@ export default function DocumentAnalyzer() {
           {documents.length === 0 && (
             <div className="flex justify-center -mt-4 mb-8">
               <button
-                onClick={(e) => { e.stopPropagation(); loadDemo(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  loadDemo();
+                }}
                 className="flex items-center gap-2 px-5 py-2.5 bg-brand-blue text-white rounded-xl text-sm font-bold hover:bg-brand-blue-dark transition-colors shadow-md shadow-brand-blue/20"
               >
                 <Sparkles className="w-4 h-4" />
@@ -345,10 +540,34 @@ export default function DocumentAnalyzer() {
           {/* Stats row */}
           {documents.length > 0 && (
             <div className="grid grid-cols-4 gap-4 mb-8">
-              <StatCard icon={FileText} color="text-brand-blue" bg="bg-brand-blue-50" label="Total" value={documents.length.toString()} />
-              <StatCard icon={CheckCircle2} color="text-status-pass" bg="bg-status-pass-bg" label="Passed" value={passCount.toString()} />
-              <StatCard icon={AlertTriangle} color="text-status-warn" bg="bg-status-warn-bg" label="Warnings" value={warnCount.toString()} />
-              <StatCard icon={XCircle} color="text-status-fail" bg="bg-status-fail-bg" label="Issues" value={failCount.toString()} />
+              <StatCard
+                icon={FileText}
+                color="text-brand-blue"
+                bg="bg-brand-blue-50"
+                label="Total"
+                value={documents.length.toString()}
+              />
+              <StatCard
+                icon={CheckCircle2}
+                color="text-status-pass"
+                bg="bg-status-pass-bg"
+                label="Passed"
+                value={passCount.toString()}
+              />
+              <StatCard
+                icon={AlertTriangle}
+                color="text-status-warn"
+                bg="bg-status-warn-bg"
+                label="Warnings"
+                value={warnCount.toString()}
+              />
+              <StatCard
+                icon={XCircle}
+                color="text-status-fail"
+                bg="bg-status-fail-bg"
+                label="Issues"
+                value={failCount.toString()}
+              />
             </div>
           )}
 
@@ -356,11 +575,14 @@ export default function DocumentAnalyzer() {
           {documents.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-extrabold text-text-heading tracking-tight">Analysis Results</h2>
+                <h2 className="text-xl font-extrabold text-text-heading tracking-tight">
+                  Analysis Results
+                </h2>
                 {analyzingCount > 0 && (
                   <span className="flex items-center gap-2 text-xs text-brand-blue font-semibold">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Analyzing {analyzingCount} document{analyzingCount > 1 ? "s" : ""}…
+                    Analyzing {analyzingCount} document
+                    {analyzingCount > 1 ? "s" : ""}…
                   </span>
                 )}
               </div>
@@ -369,7 +591,8 @@ export default function DocumentAnalyzer() {
                   const cfg = statusConfig[doc.status];
                   const Icon = cfg.icon;
                   const isSelected = selectedDoc?.id === doc.id;
-                  const isProcessing = doc.status === "analyzing" || doc.status === "uploading";
+                  const isProcessing =
+                    doc.status === "analyzing" || doc.status === "uploading";
                   return (
                     <button
                       key={doc.id}
@@ -381,24 +604,41 @@ export default function DocumentAnalyzer() {
                           : "border-border-soft hover:border-brand-blue-light hover:shadow-md"
                       } ${isProcessing ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
                     >
-                      <div className={`w-11 h-11 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}>
-                        <Icon className={`w-5 h-5 ${cfg.color} ${isProcessing ? "animate-spin" : ""}`} />
+                      <div
+                        className={`w-11 h-11 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}
+                      >
+                        <Icon
+                          className={`w-5 h-5 ${cfg.color} ${isProcessing ? "animate-spin" : ""}`}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-text-heading truncate">{doc.name}</div>
-                        <div className="text-xs text-text-muted mt-0.5">{doc.size} · {doc.type.split("/").pop()?.toUpperCase()}</div>
+                        <div className="text-sm font-bold text-text-heading truncate">
+                          {doc.name}
+                        </div>
+                        <div className="text-xs text-text-muted mt-0.5">
+                          {doc.size} ·{" "}
+                          {doc.type.split("/").pop()?.toUpperCase()}
+                        </div>
                       </div>
                       {!isProcessing && (
                         <>
-                          <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+                          <span
+                            className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border ${cfg.bg} ${cfg.color} ${cfg.border}`}
+                          >
                             {cfg.label}
                           </span>
                           <div className="w-20 shrink-0 text-right">
-                            <div className="text-lg font-extrabold text-text-heading">{doc.score}%</div>
+                            <div className="text-lg font-extrabold text-text-heading">
+                              {doc.score}%
+                            </div>
                             <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden mt-1">
                               <div
                                 className={`h-full rounded-full transition-all ${
-                                  doc.status === "pass" ? "bg-status-pass" : doc.status === "warning" ? "bg-status-warn" : "bg-status-fail"
+                                  doc.status === "pass"
+                                    ? "bg-status-pass"
+                                    : doc.status === "warning"
+                                      ? "bg-status-warn"
+                                      : "bg-status-fail"
                                 }`}
                                 style={{ width: `${doc.score}%` }}
                               />
@@ -408,7 +648,9 @@ export default function DocumentAnalyzer() {
                         </>
                       )}
                       {isProcessing && (
-                        <span className="text-xs text-brand-blue font-semibold">Processing…</span>
+                        <span className="text-xs text-brand-blue font-semibold">
+                          Processing…
+                        </span>
                       )}
                     </button>
                   );
@@ -423,8 +665,13 @@ export default function DocumentAnalyzer() {
       {selectedDoc && (
         <div className="w-[400px] border-l border-border-soft bg-white overflow-y-auto shrink-0 shadow-xl">
           <div className="p-5 border-b border-border-soft flex items-center justify-between">
-            <h3 className="text-sm font-extrabold text-text-heading tracking-tight">Analysis Detail</h3>
-            <button onClick={() => setSelectedDoc(null)} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface-muted transition-colors">
+            <h3 className="text-sm font-extrabold text-text-heading tracking-tight">
+              Analysis Detail
+            </h3>
+            <button
+              onClick={() => setSelectedDoc(null)}
+              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface-muted transition-colors"
+            >
               <X className="w-4 h-4 text-text-muted" />
             </button>
           </div>
@@ -436,28 +683,46 @@ export default function DocumentAnalyzer() {
                 <FileText className="w-5 h-5 text-brand-blue" />
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-bold text-text-heading truncate">{selectedDoc.name}</div>
-                <div className="text-[11px] text-text-muted mt-0.5">{selectedDoc.size} · Analyzed at {selectedDoc.analyzedAt}</div>
+                <div className="text-sm font-bold text-text-heading truncate">
+                  {selectedDoc.name}
+                </div>
+                <div className="text-[11px] text-text-muted mt-0.5">
+                  {selectedDoc.size} · Analyzed at {selectedDoc.analyzedAt}
+                </div>
               </div>
             </div>
 
             <div className="bg-surface-muted rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Compliance Score</div>
-                  <div className="text-4xl font-black text-text-heading tracking-tight">{selectedDoc.score}%</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">
+                    Compliance Score
+                  </div>
+                  <div className="text-4xl font-black text-text-heading tracking-tight">
+                    {selectedDoc.score}%
+                  </div>
                 </div>
-                <div className={`w-14 h-14 rounded-2xl ${statusConfig[selectedDoc.status].bg} flex items-center justify-center`}>
+                <div
+                  className={`w-14 h-14 rounded-2xl ${statusConfig[selectedDoc.status].bg} flex items-center justify-center`}
+                >
                   {(() => {
                     const Ic = statusConfig[selectedDoc.status].icon;
-                    return <Ic className={`w-7 h-7 ${statusConfig[selectedDoc.status].color}`} />;
+                    return (
+                      <Ic
+                        className={`w-7 h-7 ${statusConfig[selectedDoc.status].color}`}
+                      />
+                    );
                   })()}
                 </div>
               </div>
               <div className="h-2.5 rounded-full bg-white overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    selectedDoc.status === "pass" ? "bg-status-pass" : selectedDoc.status === "warning" ? "bg-status-warn" : "bg-status-fail"
+                    selectedDoc.status === "pass"
+                      ? "bg-status-pass"
+                      : selectedDoc.status === "warning"
+                        ? "bg-status-warn"
+                        : "bg-status-fail"
                   }`}
                   style={{ width: `${selectedDoc.score}%` }}
                 />
@@ -469,9 +734,13 @@ export default function DocumentAnalyzer() {
           <div className="p-5 border-b border-border-soft">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="w-4 h-4 text-brand-blue" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">AI Summary</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+                AI Summary
+              </span>
             </div>
-            <p className="text-sm text-text-body leading-relaxed">{selectedDoc.summary}</p>
+            <p className="text-sm text-text-body leading-relaxed">
+              {selectedDoc.summary}
+            </p>
           </div>
 
           {/* Issues */}
@@ -487,12 +756,19 @@ export default function DocumentAnalyzer() {
                 const cfg = severityConfig[issue.severity];
                 const Ic = cfg.icon;
                 return (
-                  <div key={i} className={`${cfg.bg} border ${cfg.border} rounded-xl p-4`}>
+                  <div
+                    key={i}
+                    className={`${cfg.bg} border ${cfg.border} rounded-xl p-4`}
+                  >
                     <div className="flex items-start gap-2.5">
                       <Ic className={`w-4 h-4 ${cfg.color} shrink-0 mt-0.5`} />
                       <div>
-                        <div className="text-sm font-bold text-text-heading">{issue.title}</div>
-                        <div className="text-xs text-text-body mt-1 leading-relaxed">{issue.detail}</div>
+                        <div className="text-sm font-bold text-text-heading">
+                          {issue.title}
+                        </div>
+                        <div className="text-xs text-text-body mt-1 leading-relaxed">
+                          {issue.detail}
+                        </div>
                         {issue.location && (
                           <div className="text-[11px] text-text-muted mt-2 flex items-center gap-1 font-medium">
                             <Clock className="w-3 h-3" />
@@ -512,7 +788,9 @@ export default function DocumentAnalyzer() {
             <div className="p-5 border-t border-border-soft">
               <div className="flex items-center gap-2 mb-3">
                 <Shield className="w-4 h-4 text-brand-blue" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Recommendation</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+                  Recommendation
+                </span>
               </div>
               <div className="bg-brand-blue-50 border border-brand-blue-100 rounded-xl p-4">
                 <p className="text-sm text-brand-blue-dark leading-relaxed font-medium">
@@ -544,11 +822,15 @@ function StatCard({
 }) {
   return (
     <div className="bg-white border border-border-soft rounded-xl p-4 flex items-center gap-3 shadow-sm">
-      <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+      <div
+        className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}
+      >
         <Icon className={`w-5 h-5 ${color}`} />
       </div>
       <div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">{label}</div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+          {label}
+        </div>
         <div className="text-2xl font-extrabold text-text-heading">{value}</div>
       </div>
     </div>
