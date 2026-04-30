@@ -147,9 +147,12 @@ export default function DocumentAnalyzer() {
   const [csvPreview, setCsvPreview] = useState<{ name: string; content: string }[] | null>(null);
   const [csvLoading, setCsvLoading] = useState(false);
   const [expandedCsv, setExpandedCsv] = useState<string | null>(null);
+  const [uploadedXml, setUploadedXml] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const analyzeWithBody = useCallback(async (body: Record<string, unknown>) => {
+  const runAnalysis = useCallback(async (useAgent = false) => {
+    if (!uploadedXml) return;
     setIsLoading(true);
     setError(null);
     setSelectedRejection(null);
@@ -158,7 +161,7 @@ export default function DocumentAnalyzer() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ xml: uploadedXml, useAgent }),
       });
 
       if (!res.ok) {
@@ -173,27 +176,30 @@ export default function DocumentAnalyzer() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  const runDemo = useCallback(() => analyzeWithBody({}), [analyzeWithBody]);
-  const runWithAgent = useCallback(() => analyzeWithBody({ useAgent: true }), [analyzeWithBody]);
+  }, [uploadedXml]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) {
-      file.text().then((xml) => analyzeWithBody({ xml }));
+      file.text().then((xml) => {
+        setUploadedXml(xml);
+        setUploadedFileName(file.name);
+      });
     }
-  }, [analyzeWithBody]);
+  }, []);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      file.text().then((xml) => analyzeWithBody({ xml }));
+      file.text().then((xml) => {
+        setUploadedXml(xml);
+        setUploadedFileName(file.name);
+      });
       e.target.value = "";
     }
-  }, [analyzeWithBody]);
+  }, []);
 
   const handleApprove = useCallback(async (rejectionId: string, action: "approved" | "rejected" | "escalated") => {
     if (!analysis) return;
@@ -267,18 +273,43 @@ export default function DocumentAnalyzer() {
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Uploaded file indicator + action buttons */}
+          {uploadedXml && (
+            <div className="mt-2 mb-4 flex items-center justify-center gap-2">
+              <div className="inline-flex items-center gap-2 text-sm text-status-pass bg-status-pass-bg px-4 py-2 rounded-full font-medium">
+                <CheckCircle2 className="w-4 h-4" />
+                {uploadedFileName ?? "File uploaded"}
+              </div>
+              <button
+                onClick={() => { setUploadedXml(null); setUploadedFileName(null); }}
+                className="text-xs text-text-muted hover:text-status-fail transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           <div className="flex justify-center gap-3">
             <button
-              onClick={runDemo}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-blue text-white rounded-xl text-sm font-bold hover:bg-brand-blue-dark transition-colors shadow-md shadow-brand-blue/20"
+              onClick={() => runAnalysis(false)}
+              disabled={!uploadedXml}
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md ${
+                uploadedXml
+                  ? "bg-brand-blue text-white hover:bg-brand-blue-dark shadow-brand-blue/20"
+                  : "bg-surface-muted text-text-muted cursor-not-allowed shadow-none"
+              }`}
             >
               <Sparkles className="w-4 h-4" />
-              Run Demo Analysis
+              Run Analysis
             </button>
             <button
-              onClick={runWithAgent}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-navy text-white rounded-xl text-sm font-bold hover:opacity-90 transition-opacity shadow-md shadow-brand-navy/20"
+              onClick={() => runAnalysis(true)}
+              disabled={!uploadedXml}
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md ${
+                uploadedXml
+                  ? "bg-brand-navy text-white hover:opacity-90 shadow-brand-navy/20"
+                  : "bg-surface-muted text-text-muted cursor-not-allowed shadow-none"
+              }`}
             >
               <Brain className="w-4 h-4" />
               Run with AI Agent
@@ -346,7 +377,7 @@ export default function DocumentAnalyzer() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-extrabold text-text-heading tracking-tight">Rejection Analysis</h2>
             <button
-              onClick={() => { setAnalysis(null); setSelectedRejection(null); setError(null); }}
+              onClick={() => { setAnalysis(null); setSelectedRejection(null); setError(null); setUploadedXml(null); setUploadedFileName(null); }}
               className="text-xs font-bold text-brand-blue hover:underline"
             >
               New Analysis
