@@ -1,0 +1,5 @@
+client_reference,client_name,rm_name,rm_email,rm_phone,client_tier,region
+CLIENT-GS-042,Goldman Sachs Fund 042,Anita Cole,anita.cole@lseg.com,+44 20 7930 4001,Tier 1,EMEA
+CLIENT-BR-017,BlackRock Fund 017,David Lin,david.lin@lseg.com,+44 20 7930 4002,Tier 1,Americas
+CLIENT-CIT-001,Citadel Securities,Sarah Park,sarah.park@lseg.com,+44 20 7930 4003,Tier 1,Americas
+CLIENT-DB-001,Deutsche Bank AG,Marcus Weber,marcus.weber@lseg.com,+49 69 910 0001,Tier 1,EMEA
