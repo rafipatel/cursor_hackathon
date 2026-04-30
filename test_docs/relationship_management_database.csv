@@ -1,0 +1,5 @@
+client_reference,client_account_id,rm_name,rm_email,rm_region,rm_timezone
+GOLDMANSAX-FUND-042,CA-GLD-001,Anita Cole,anita.cole@lseg.example,EMEA,Europe/London
+BLACKROCK-FUND-017,CA-BLK-017,David Lin,david.lin@lseg.example,EMEA,Europe/London
+NATWEST-FUND-318,CA-NAT-318,Peter Shah,peter.shah@lseg.example,EMEA,Europe/London
+HSBC-FUND-502,CA-HSB-502,Leah Wong,leah.wong@lseg.example,APAC,Asia/Singapore

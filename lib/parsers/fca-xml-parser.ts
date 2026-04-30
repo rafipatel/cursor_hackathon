@@ -10,7 +10,7 @@ export function parseFCAFeedbackXML(xml: string): FCAFeedbackRecord[] {
   const parsed = parser.parse(xml);
 
   const transactions =
-    parsed?.FCAFeedback?.RejectedTransactions?.Transaction;
+    parsed?.RegulatoryFeedback?.RejectedTransactions?.Transaction;
 
   if (!transactions) return [];
 
@@ -18,10 +18,10 @@ export function parseFCAFeedbackXML(xml: string): FCAFeedbackRecord[] {
 
   return txArray.map((tx: Record<string, string>) => ({
     transactionReferenceNumber: tx.ReferenceNumber,
-    errorCode: tx.RejectionCode,
-    errorDescription: tx.RejectionDescription,
-    rejectedField: tx.RejectedField,
-    rejectedValue: tx.RejectedValue,
-    feedbackTimestamp: tx.FeedbackTimestamp,
+    errorCode: tx.RejectCode,
+    errorDescription: tx.RejectReason,
+    rejectedField: tx.Field,
+    rejectedValue: tx.SubmittedValue,
+    clientReference: tx.ClientReference,
   }));
 }

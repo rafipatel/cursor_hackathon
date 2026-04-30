@@ -4,51 +4,43 @@ export interface FCAFeedbackRecord {
   errorDescription: string;
   rejectedField: string;
   rejectedValue: string;
-  feedbackTimestamp: string;
+  clientReference: string;
 }
 
 export interface SubmittedReport {
   transactionReferenceNumber: string;
   venueTransactionId: string;
-  executingEntityIdCode: string;
   buyerIdentificationCode: string;
   sellerIdentificationCode: string;
-  instrumentIdentificationCode: string;
-  price: string;
-  quantity: string;
-  tradeDatetime: string;
-  venueIdentification: string;
-  currency: string;
+  clientReference: string;
+  tradingDatetime: string;
 }
 
 export interface TradeRegistryEntry {
+  fxallTradeId: string;
   venueTransactionId: string;
   clientAccountId: string;
+  fundId: string;
   clientReference: string;
-  tradeType: string;
-  instrumentType: string;
-  executionVenue: string;
+  tradeDate: string;
 }
 
 export interface RelationshipManager {
   clientReference: string;
-  clientName: string;
+  clientAccountId: string;
   rmName: string;
   rmEmail: string;
-  rmPhone: string;
-  clientTier: string;
-  region: string;
+  rmRegion: string;
+  rmTimezone: string;
 }
 
 export interface LEIRecord {
   lei: string;
   legalName: string;
   status: "ACTIVE" | "LAPSED" | "ANNULLED" | "RETIRED" | "PENDING";
-  initialRegistrationDate: string;
+  registrationStatus: string;
   lastUpdateDate: string;
   nextRenewalDate: string;
-  managingLou: string;
-  jurisdiction: string;
 }
 
 export interface LEILookupResult {
@@ -58,7 +50,6 @@ export interface LEILookupResult {
   nextRenewalDate: string;
   isExpired: boolean;
   isRenewable: boolean;
-  managingLou: string;
 }
 
 export interface EnrichedRejection {

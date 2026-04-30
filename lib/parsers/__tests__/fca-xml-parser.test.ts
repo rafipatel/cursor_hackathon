@@ -11,14 +11,14 @@ const xml = readFileSync(
 const records = parseFCAFeedbackXML(xml);
 
 assert.strictEqual(records.length, 3, `Expected 3 rejections, got ${records.length}`);
-assert.strictEqual(records[0].transactionReferenceNumber, "FXALL-20260407-001");
+assert.strictEqual(records[0].transactionReferenceNumber, "TRN-2026-00123456");
 assert.strictEqual(records[0].errorCode, "LEIV001");
 assert.strictEqual(records[0].rejectedField, "BuyerIdentificationCode");
 assert.strictEqual(records[0].rejectedValue, "213800FERQ5LE3H0XU88");
+assert.strictEqual(records[0].clientReference, "GOLDMANSAX-FUND-042");
 
 assert.strictEqual(records[2].errorCode, "LEIV002");
 assert.strictEqual(records[2].rejectedValue, "5299000J2N45DDNE4Y28");
-
-assert.ok(records.every((r) => r.feedbackTimestamp.startsWith("2026-04-07")));
+assert.strictEqual(records[2].clientReference, "BLACKROCK-FUND-017");
 
 console.log("fca-xml-parser: all tests passed");

@@ -1,8 +1,6 @@
-import { readFileSync } from "fs";
-import { resolve } from "path";
 import assert from "node:assert";
-import { parseFCAFeedbackXML } from "../../parsers/fca-xml-parser.js";
 import {
+  loadFCARejections,
   loadSubmittedReports,
   loadTradeRegistry,
   loadRelationshipManagers,
@@ -11,12 +9,7 @@ import {
 import { enrichRejections } from "../../enrichment/join-engine.js";
 import { runAnalysis } from "../orchestrator.js";
 
-const xml = readFileSync(
-  resolve(process.cwd(), "data", "fca_feedback_rejected_transactions.xml"),
-  "utf-8"
-);
-
-const rejections = parseFCAFeedbackXML(xml);
+const rejections = loadFCARejections();
 const reports = loadSubmittedReports();
 const trades = loadTradeRegistry();
 const rms = loadRelationshipManagers();
@@ -65,6 +58,3 @@ assert.ok(blackrockRej.draftEmail.to.includes("david.lin"), `Expected David Lin 
 console.log("orchestrator integration test: all tests passed");
 console.log(`  - ${result.rejections.length} rejections analyzed`);
 console.log(`  - Summary: ${result.summary.critical} critical, ${result.summary.warning} warning, ${result.summary.info} info`);
-console.log(`  - All diagnoses have root cause, severity, actioner, recommended fix`);
-console.log(`  - All draft emails have recipient, subject, substantive body`);
-console.log(`  - Goldman (lapsed) routed to Anita Cole, BlackRock (annulled) routed to David Lin`);

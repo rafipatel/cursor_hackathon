@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { parseFCAFeedbackXML } from "../lib/parsers/fca-xml-parser.js";
 import {
+  loadFCARejections,
   loadSubmittedReports,
   loadTradeRegistry,
   loadRelationshipManagers,
@@ -11,6 +12,8 @@ import { runAnalysis } from "../lib/agent/orchestrator.js";
 
 const analysisCache = new Map<string, unknown>();
 
+export { analysisCache };
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -18,13 +21,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const xml = typeof req.body === "string" ? req.body : req.body?.xml;
-    if (!xml) {
-      return res.status(400).json({ error: "Missing XML body" });
-    }
+    const useAgent = req.body?.useAgent === true;
 
-    const rejections = parseFCAFeedbackXML(xml);
+    const rejections = xml
+      ? parseFCAFeedbackXML(xml)
+      : loadFCARejections();
+
     if (rejections.length === 0) {
-      return res.status(400).json({ error: "No rejected transactions found in XML" });
+      return res.status(400).json({ error: "No rejected transactions found" });
     }
 
     const reports = loadSubmittedReports();
@@ -33,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const leis = loadLEIRecords();
 
     const enriched = enrichRejections(rejections, reports, trades, rms, leis);
-    const result = await runAnalysis(enriched);
+    const result = await runAnalysis(enriched, { forceAgent: useAgent });
 
     analysisCache.set(result.id, result);
 

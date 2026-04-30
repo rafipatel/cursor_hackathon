@@ -3,14 +3,15 @@ import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts.js";
 import { parseAgentResponse, buildRejectionResults, buildFallbackResults } from "./tools.js";
 
 export async function runAnalysis(
-  enrichedRejections: EnrichedRejection[]
+  enrichedRejections: EnrichedRejection[],
+  options?: { forceAgent?: boolean }
 ): Promise<AnalysisResult> {
   const analysisId = `analysis-${Date.now()}`;
   const now = new Date().toISOString();
 
   let rejections: RejectionResult[];
 
-  if (!process.env.CURSOR_API_KEY) {
+  if (!options?.forceAgent && !process.env.CURSOR_API_KEY) {
     console.warn("CURSOR_API_KEY not set, using deterministic fallback");
     rejections = buildFallbackResults(enrichedRejections);
   } else {

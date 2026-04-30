@@ -90,12 +90,12 @@ export function buildFallbackResults(
     const recommendedFix = isAnnulled
       ? `Client must obtain a new LEI from an accredited LOU. The previous LEI cannot be reinstated.`
       : isLapsed
-        ? `Client must renew LEI through ${lei?.managingLou ?? "their managing LOU"} before resubmission.`
+        ? `Client must renew LEI through their managing LOU before resubmission.`
         : `Review and correct the ${fb.rejectedField} field value.`;
 
     const actioner: DiagnosisResult["actioner"] = isAnnulled || isLapsed ? "client" : "internal";
 
-    const clientName = rm?.clientName ?? "the affected client";
+    const clientRef = fb.clientReference;
 
     const diagnosis: DiagnosisResult = {
       rejectionId: fb.transactionReferenceNumber,
@@ -110,10 +110,10 @@ export function buildFallbackResults(
     const draftEmail: DraftEmail = {
       to: rm?.rmEmail ?? "compliance@firm.com",
       toName: rm?.rmName ?? "Compliance Team",
-      subject: `[${severity.toUpperCase()}] MiFIR Rejection — ${clientName} — ${fb.transactionReferenceNumber}`,
+      subject: `[${severity.toUpperCase()}] MiFIR Rejection — ${clientRef} — ${fb.transactionReferenceNumber}`,
       body: `Dear ${rm?.rmName ?? "Compliance Team"},
 
-Transaction ${fb.transactionReferenceNumber} for ${clientName} has been rejected by the FCA.
+Transaction ${fb.transactionReferenceNumber} for ${clientRef} has been rejected by the FCA.
 
 Error: ${fb.errorCode} — ${fb.errorDescription}
 Rejected Field: ${fb.rejectedField}
@@ -123,9 +123,9 @@ Root Cause: ${rootCause}
 
 Recommended Action: ${recommendedFix}
 
-This must be resolved within 3 business days of the feedback timestamp (${fb.feedbackTimestamp}).
+This must be resolved within 3 business days of the feedback receipt.
 
-Please coordinate with ${clientName} to resolve this at the earliest opportunity.
+Please coordinate with ${clientRef} to resolve this at the earliest opportunity.
 
 Regards,
 Regulatory Reporting Operations`,

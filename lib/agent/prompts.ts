@@ -18,7 +18,7 @@ You MUST respond with valid JSON only — no markdown, no commentary, no code fe
     "explanation": "<2-3 sentences explaining what happened and regulatory implications>",
     "recommendedFix": "<specific action steps>",
     "actioner": "client" | "internal" | "regulator",
-    "regulatoryDeadline": "<T+N business days from feedback timestamp>",
+    "regulatoryDeadline": "<T+N business days from feedback receipt>",
     "email": {
       "subject": "<email subject>",
       "body": "<full email body>",
@@ -41,32 +41,28 @@ Error Code: ${fb.errorCode}
 Error Description: ${fb.errorDescription}
 Rejected Field: ${fb.rejectedField}
 Rejected Value: ${fb.rejectedValue}
-Feedback Timestamp: ${fb.feedbackTimestamp}
+Client Reference: ${fb.clientReference}
 
 Submitted Report:
 ${report ? `  Venue Transaction ID: ${report.venueTransactionId}
   Buyer LEI: ${report.buyerIdentificationCode}
   Seller LEI: ${report.sellerIdentificationCode}
-  Instrument: ${report.instrumentIdentificationCode}
-  Price: ${report.price} ${report.currency}
-  Quantity: ${report.quantity}
-  Trade DateTime: ${report.tradeDatetime}
-  Venue: ${report.venueIdentification}` : "  Not found"}
+  Client Reference: ${report.clientReference}
+  Trading DateTime: ${report.tradingDatetime}` : "  Not found"}
 
 Trade Registry:
-${trade ? `  Client Account: ${trade.clientAccountId}
+${trade ? `  FXall Trade ID: ${trade.fxallTradeId}
+  Client Account: ${trade.clientAccountId}
+  Fund ID: ${trade.fundId}
   Client Reference: ${trade.clientReference}
-  Trade Type: ${trade.tradeType}
-  Instrument Type: ${trade.instrumentType}
-  Execution Venue: ${trade.executionVenue}` : "  Not found"}
+  Trade Date: ${trade.tradeDate}` : "  Not found"}
 
 Relationship Manager:
-${rm ? `  Client Name: ${rm.clientName}
-  RM Name: ${rm.rmName}
+${rm ? `  RM Name: ${rm.rmName}
   RM Email: ${rm.rmEmail}
-  RM Phone: ${rm.rmPhone}
-  Client Tier: ${rm.clientTier}
-  Region: ${rm.region}` : "  Not found"}
+  Client Account: ${rm.clientAccountId}
+  Region: ${rm.rmRegion}
+  Timezone: ${rm.rmTimezone}` : "  Not found"}
 
 LEI Status (GLEIF):
 ${lei ? `  LEI: ${lei.lei}
@@ -74,8 +70,7 @@ ${lei ? `  LEI: ${lei.lei}
   Status: ${lei.status}
   Next Renewal Date: ${lei.nextRenewalDate}
   Is Expired: ${lei.isExpired}
-  Is Renewable: ${lei.isRenewable}
-  Managing LOU: ${lei.managingLou}` : "  Not found in GLEIF database"}`;
+  Is Renewable: ${lei.isRenewable}` : "  Not found in GLEIF database"}`;
   });
 
   return `Analyse the following ${enrichedRejections.length} FCA MiFIR transaction report rejection(s) and produce your diagnosis and RM notification for each.\n\n${formatted.join("\n\n")}`;

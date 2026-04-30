@@ -22,7 +22,9 @@ export function enrichRejections(
   return rejections.map((rejection) => {
     const report = reportMap.get(rejection.transactionReferenceNumber) ?? null;
     const trade = report ? tradeMap.get(report.venueTransactionId) ?? null : null;
-    const rm = trade ? rmMap.get(trade.clientReference) ?? null : null;
+    const rm = trade
+      ? rmMap.get(trade.clientReference) ?? null
+      : rmMap.get(rejection.clientReference) ?? null;
     const leiResult = lookupLEI(rejection.rejectedValue, leis);
 
     return {

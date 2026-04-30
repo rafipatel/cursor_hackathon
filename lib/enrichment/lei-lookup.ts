@@ -16,6 +16,5 @@ export function lookupLEI(lei: string, records: LEIRecord[]): LEILookupResult | 
     nextRenewalDate: record.nextRenewalDate,
     isExpired,
     isRenewable,
-    managingLou: record.managingLou,
   };
 }

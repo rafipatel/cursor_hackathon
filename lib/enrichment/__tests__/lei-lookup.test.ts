@@ -16,8 +16,8 @@ assert.strictEqual(annulled.status, "ANNULLED");
 assert.strictEqual(annulled.isExpired, true);
 assert.strictEqual(annulled.isRenewable, false);
 
-const active = lookupLEI("529900T8BM49AURSDO55", leis);
-assert.ok(active, "Expected to find active LEI");
+const active = lookupLEI("2138007LIVELEI55662", leis);
+assert.ok(active, "Expected to find active NatWest LEI");
 assert.strictEqual(active.status, "ACTIVE");
 assert.strictEqual(active.isExpired, false);
 

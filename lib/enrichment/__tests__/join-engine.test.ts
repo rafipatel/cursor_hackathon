@@ -1,20 +1,14 @@
 import { enrichRejections } from "../join-engine.js";
-import { parseFCAFeedbackXML } from "../../parsers/fca-xml-parser.js";
 import {
+  loadFCARejections,
   loadSubmittedReports,
   loadTradeRegistry,
   loadRelationshipManagers,
   loadLEIRecords,
 } from "../../parsers/csv-loader.js";
-import { readFileSync } from "fs";
-import { resolve } from "path";
 import assert from "node:assert";
 
-const xml = readFileSync(
-  resolve(process.cwd(), "data", "fca_feedback_rejected_transactions.xml"),
-  "utf-8"
-);
-const rejections = parseFCAFeedbackXML(xml);
+const rejections = loadFCARejections();
 const reports = loadSubmittedReports();
 const trades = loadTradeRegistry();
 const rms = loadRelationshipManagers();
@@ -35,5 +29,6 @@ assert.strictEqual(first.relationshipManager?.rmName, "Anita Cole");
 const third = enriched[2];
 assert.ok(third.leiLookup, "Third rejection should have LEI lookup data");
 assert.strictEqual(third.leiLookup?.status, "ANNULLED");
+assert.strictEqual(third.relationshipManager?.rmName, "David Lin");
 
 console.log("join-engine: all tests passed");
