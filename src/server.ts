@@ -13,6 +13,17 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (_req, res) => {
+  res.json({
+    name: "FCA MiFIR Rejection Pipeline API",
+    version: "1.0.0",
+    endpoints: {
+      "GET /health": "Health check",
+      "POST /api/analyze": "Upload FCA XML — returns enriched rejections + AI diagnoses",
+    },
+  });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
