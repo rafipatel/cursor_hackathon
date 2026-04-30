@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RegulatoryFeedback>
+  <Header>
+    <FeedbackID>FCA-FB-20260407-001</FeedbackID>
+    <ReportingDate>2026-04-07</ReportingDate>
+    <SubmittingFirm>LSEG-FXALL</SubmittingFirm>
+    <GeneratedAt>2026-04-07T08:30:00Z</GeneratedAt>
+  </Header>
+  <RejectedTransactions>
+    <Transaction>
+      <ReferenceNumber>TRN-2026-00123456</ReferenceNumber>
+      <RejectCode>LEIV001</RejectCode>
+      <RejectReason>Invalid LEI - status is LAPSED</RejectReason>
+      <Field>BuyerIdentificationCode</Field>
+      <SubmittedValue>213800FERQ5LE3H0XU88</SubmittedValue>
+      <ClientReference>GOLDMANSAX-FUND-042</ClientReference>
+    </Transaction>
+    <Transaction>
+      <ReferenceNumber>TRN-2026-00123457</ReferenceNumber>
+      <RejectCode>LEIV001</RejectCode>
+      <RejectReason>Invalid LEI - status is LAPSED</RejectReason>
+      <Field>BuyerIdentificationCode</Field>
+      <SubmittedValue>213800FERQ5LE3H0XU88</SubmittedValue>
+      <ClientReference>GOLDMANSAX-FUND-042</ClientReference>
+    </Transaction>
+    <Transaction>
+      <ReferenceNumber>TRN-2026-00123891</ReferenceNumber>
+      <RejectCode>LEIV002</RejectCode>
+      <RejectReason>Invalid LEI - status is ANNULLED</RejectReason>
+      <Field>BuyerIdentificationCode</Field>
+      <SubmittedValue>5299000J2N45DDNE4Y28</SubmittedValue>
+      <ClientReference>BLACKROCK-FUND-017</ClientReference>
+    </Transaction>
+  </RejectedTransactions>
+</RegulatoryFeedback>
