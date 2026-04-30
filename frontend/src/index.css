@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  --font-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+
   --color-brand-blue: #3868b8;
   --color-brand-blue-dark: #2a4f8f;
   --color-brand-blue-light: #5a8ad4;
@@ -26,7 +29,7 @@
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   background-image:
     linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
