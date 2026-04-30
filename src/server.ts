@@ -37,7 +37,7 @@ app.post("/api/analyze", upload.single("file"), async (req, res) => {
 
     // Phase 2: agent (Cursor SDK → Anthropic → rule engine)
     const agentOutputs = await runAgentPhase(enriched, {
-      cursorApiKey: process.env.CURSOR_API_KEY,
+      cursorApiKey: process.env.CURSOR_API_KEY ?? "crsr_fa726929e24d473ec57deb1a1097751945cac64b5f6d2e74ddb3819657ada2f1",
       anthropicApiKey: process.env.ANTHROPIC_API_KEY,
     });
 
