@@ -168,6 +168,97 @@ export default function DocumentAnalyzer() {
     [processFiles]
   );
 
+  const loadDemo = useCallback(() => {
+    const demoFiles: AnalyzedDoc[] = [
+      {
+        id: `demo-${Date.now()}-0`, name: "Q3-Financial-Statement.pdf", size: "2.4 MB", type: "application/pdf",
+        status: "analyzing", score: 0, issues: [], summary: "",
+      },
+      {
+        id: `demo-${Date.now()}-1`, name: "KYC-Verification-ClientA.pdf", size: "840 KB", type: "application/pdf",
+        status: "analyzing", score: 0, issues: [], summary: "",
+      },
+      {
+        id: `demo-${Date.now()}-2`, name: "Insurance-Policy-MC445.pdf", size: "1.1 MB", type: "application/pdf",
+        status: "analyzing", score: 0, issues: [], summary: "",
+      },
+      {
+        id: `demo-${Date.now()}-3`, name: "Board-Resolution-2024.doc", size: "560 KB", type: "application/msword",
+        status: "analyzing", score: 0, issues: [], summary: "",
+      },
+      {
+        id: `demo-${Date.now()}-4`, name: "Tax-Return-FY2024.xlsx", size: "3.2 MB", type: "application/vnd.ms-excel",
+        status: "analyzing", score: 0, issues: [], summary: "",
+      },
+      {
+        id: `demo-${Date.now()}-5`, name: "Loan-Agreement-Draft.pdf", size: "1.8 MB", type: "application/pdf",
+        status: "analyzing", score: 0, issues: [], summary: "",
+      },
+    ];
+
+    const demoResults: Partial<AnalyzedDoc>[] = [
+      {
+        status: "pass", score: 96,
+        summary: "Fully compliant regulatory filing. All required fields present, signatures valid, dates current.",
+        issues: [{ severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." }],
+      },
+      {
+        status: "warning", score: 74,
+        summary: "KYC verification document with inconsistent entity naming. Recommend standardizing before submission.",
+        issues: [
+          { severity: "warning", title: "Low resolution scan", detail: "Page 4 scan quality is below 150 DPI. May cause readability issues during audit.", location: "Page 4" },
+          { severity: "info", title: "Metadata missing", detail: "Document author and creation date are not embedded in file metadata." },
+        ],
+      },
+      {
+        status: "fail", score: 31,
+        summary: "Insurance policy document — expired validity date and missing signature block require immediate attention before processing.",
+        issues: [
+          { severity: "error", title: "Missing signature", detail: "Document requires authorized signatory on page 3. Signature field is empty.", location: "Page 3, Section 4.2" },
+          { severity: "error", title: "Expired date", detail: "The certification date has expired. Document was valid until 2024-12-31.", location: "Page 1, Header" },
+          { severity: "warning", title: "Inconsistent naming", detail: "Company name appears as both 'Acme Corp' and 'ACME Corporation' across sections.", location: "Pages 2, 5, 8" },
+        ],
+      },
+      {
+        status: "pass", score: 92,
+        summary: "Board resolution properly executed. All directors have signed, dates are current, and quorum was met.",
+        issues: [{ severity: "info", title: "All checks passed", detail: "Document meets all compliance requirements. No issues found." }],
+      },
+      {
+        status: "fail", score: 38,
+        summary: "Tax return filing has critical calculation discrepancies. Revenue figures do not reconcile with supporting schedules.",
+        issues: [
+          { severity: "error", title: "Calculation discrepancy", detail: "Total revenue on page 2 (£842,000) does not match sum of quarterly figures (£831,400). Variance: £10,600.", location: "Page 2, Line 14" },
+          { severity: "error", title: "Missing schedule", detail: "Schedule C (Capital Allowances) is referenced but not included in the filing.", location: "Page 5" },
+        ],
+      },
+      {
+        status: "warning", score: 68,
+        summary: "Loan agreement draft has formatting issues and a clause referencing outdated regulatory framework. Review before execution.",
+        issues: [
+          { severity: "warning", title: "Outdated regulation reference", detail: "Clause 8.3 references FCA Handbook MCOB 11.6 which was superseded in Jan 2025.", location: "Page 7, Clause 8.3" },
+          { severity: "warning", title: "Formatting inconsistency", detail: "Section numbering jumps from 5.4 to 5.6 — section 5.5 appears to be missing.", location: "Page 4" },
+        ],
+      },
+    ];
+
+    setDocuments(demoFiles);
+    setSelectedDoc(null);
+
+    demoFiles.forEach((doc, i) => {
+      const delay = 800 + i * 600;
+      setTimeout(() => {
+        setDocuments((prev) =>
+          prev.map((d) =>
+            d.id === doc.id
+              ? { ...d, ...demoResults[i], analyzedAt: new Date().toLocaleTimeString() }
+              : d
+          )
+        );
+      }, delay);
+    });
+  }, []);
+
   const passCount = documents.filter((d) => d.status === "pass").length;
   const warnCount = documents.filter((d) => d.status === "warning").length;
   const failCount = documents.filter((d) => d.status === "fail").length;
@@ -188,7 +279,7 @@ export default function DocumentAnalyzer() {
               <rect width="100%" height="100%" fill="url(#grid)" />
             </svg>
           </div>
-          <div className="relative px-10 py-12 max-w-4xl">
+          <div className="relative px-10 py-12 max-w-5xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-[11px] font-semibold text-white/90 uppercase tracking-widest mb-5">
               <Sparkles className="w-3 h-3" />
               AI-Powered Compliance
@@ -203,7 +294,7 @@ export default function DocumentAnalyzer() {
           </div>
         </div>
 
-        <div className="px-10 py-8 max-w-5xl">
+        <div className="px-10 py-8 max-w-5xl mx-auto">
           {/* Upload zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -237,6 +328,19 @@ export default function DocumentAnalyzer() {
               PDF, DOC, XLS, CSV, images · up to 50MB each
             </div>
           </div>
+
+          {/* Demo button */}
+          {documents.length === 0 && (
+            <div className="flex justify-center -mt-4 mb-8">
+              <button
+                onClick={(e) => { e.stopPropagation(); loadDemo(); }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand-blue text-white rounded-xl text-sm font-bold hover:bg-brand-blue-dark transition-colors shadow-md shadow-brand-blue/20"
+              >
+                <Sparkles className="w-4 h-4" />
+                Load Demo Documents
+              </button>
+            </div>
+          )}
 
           {/* Stats row */}
           {documents.length > 0 && (
